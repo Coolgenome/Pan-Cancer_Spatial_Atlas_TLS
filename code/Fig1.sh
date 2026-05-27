@@ -11,38 +11,44 @@ python rescale.py ${prefix} --image --mask --locs --radius
 python preprocess.py ${prefix} --image --mask
 
 n_genes=1000
-gene_txt="./data/genes_add.txt"
-#need clean genes_add
-python select_genes.py --n-top=${n_genes} "${prefix}cnts.tsv" "${prefix}gene-names.txt"
-python Add_genes.py ${prefix} ${gene_txt}
-python plot_spots.py ${prefix}
+gene_txt1="/rsrch6/home/genomic_med/lwang22_lab/kevin/kevin/tools/TLS_signature/genes.txt"
+gene_txt2="/rsrch6/home/genomic_med/lwang22_lab/kevin/kevin/tools/TLS_signature/tls_genes_all.txt"
+python ${pipeline}select_genes.py --n-top=${n_genes} "${prefix}cnts.tsv" "${prefix}gene-names.txt"
+python ${pipeline}Add_genes.py ${prefix} ${gene_txt1}
+python ${pipeline}Add_genes.py ${prefix} ${gene_txt2}
+python ${pipeline}plot_spots.py ${prefix}
 
-python extract_features.py ${prefix} --device=${device}
-python impute.py ${prefix} --epochs=400 --device=${device}
-python plot_imputed.py ${prefix}
+python ${pipeline}extract_features.py ${prefix} --device=${device}
+python ${pipeline}impute.py ${prefix} --epochs=400 --device=${device}
+python ${pipeline}plot_imputed.py ${prefix}
 
-
-tls_folder="./data/TLS_signature/"
+tls_folder="/rsrch6/home/genomic_med/lwang22_lab/kevin/kevin/tools/TLS_signature/"
 struct_name_file=${tls_folder}structures.txt
 taxonomy_file=${tls_folder}structures.yml
 
 while read struct; do
     gene_name_file=${tls_folder}${struct}/gene-names.txt
-    python marker_score.py ${prefix} $gene_name_file ${prefix}markers/phenotype/raw/${struct}
+    python ${pipeline}marker_score.py ${prefix} $gene_name_file ${prefix}markers/phenotype/raw/${struct}
 done < $struct_name_file
 
-python phenotype.py ${prefix}
+python ${pipeline}phenotype.py ${prefix}
 
 cp ${prefix}markers/phenotype/raw/lymphoid.pickle ${prefix}embeddings-tls.pickle
 
-python cluster_TLS.py --n-clusters=5 --filter-size=32 --min-cluster-size=20 ${prefix}embeddings-tls.pickle ${prefix}tls_quantify_filtersize_32/ncluster_5/size_20/
-python combine_TLS_cluster.py ${prefix} 5 32 4 3
+python ${pipeline}cluster_TLS.py --n-clusters=5 --filter-size=32 --min-cluster-size=20 ${prefix}embeddings-tls.pickle ${prefix}tls_cluster/
+python ${pipeline}combine_TLS_cluster.py ${prefix} 5 4 3
 
-python preprocess_tls.py ${prefix} 5 32
-python preprocess_tls_combined.py ${prefix} 5 32
+python3 ${pipeline}enlarge.py ${prefix}
 
-python3 enlarge.py ${prefix}
+mask="tls_cluster/nclusters005/masks_combined/3.png"
+python3 ${pipeline}tls_segment.py ${prefix} ${mask} TLS_segmentation/
 
-mask="tls_quantify_filtersize_32/ncluster_5/size_20/nclusters005/masks_combined/3.png"
+anno="/rsrch6/home/genomic_med/lwang22_lab/kevin/kevin/4.TLS/2_Gastric_G35_v2/tls_annotation.csv"
+python3 ${pipeline}tls_highlight.py ${prefix} ${mask} TLS_segmentation/ ${anno}
+python3 ${pipeline}tls_segment_TOP.py ${prefix} ${mask} TLS_segmentation/ ${anno}
+python3 ${pipeline}tls_segment_TOP_spatial_plot.py ${prefix} ${mask} TLS_segmentation/ ${anno}
+python3 ${pipeline}tls_segment_TOP_six_genes.py ${prefix} ${mask} TLS_segmentation/ ${anno}
+python3 ${pipeline}tls_segment_TOP_all_genes.py ${prefix} ${mask} TLS_segmentation/ ${anno}
 
-python3 tls_segment.py ${prefix} ${mask} TLS_segmentation/
+python3 ${pipeline}save_pickle.py ${prefix} ${mask} TLS_segmentation/ ${anno}
+python3 ${pipeline}pickle_to_spot_ST.py ${prefix} TLS_segmentation/combined_labeled_array.pickle TLS_segmentation/ ${anno}

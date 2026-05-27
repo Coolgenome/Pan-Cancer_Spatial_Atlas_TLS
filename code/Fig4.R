@@ -2,14 +2,11 @@
 ### The codes are separated by Figures ###
 
 ### load packages ###
-library(Seurat)
 library(monocle)
-library(edgeR)
 library(pheatmap)
 library(reshape2)
 library(dplyr)
 library(grid)
-library(ggridges)
 library(ggplot2)
 library(RColorBrewer)
 
@@ -17,7 +14,6 @@ library(RColorBrewer)
 
 #### Figure 4B ####
 cor_matrix = list()
-pval_matrix <- list()
 
 for(j in c(1,3:8,10)){
   tls_object = "IT"
@@ -26,14 +22,14 @@ for(j in c(1,3:8,10)){
   sig_variable_name <- paste0("combined_sig_", tls_object)
   meta_data_variable_name <- paste0("combined_meta_data_", tls_object)
   
-  sig <- get(sig_variable_name)
-  meta_data <- get(meta_data_variable_name)
+  expr_mat <- get(sig_variable_name)
+  cell_metadata_df <- get(meta_data_variable_name)
   
-  gene_metadata <- data.frame(gene_short_name = rownames(sig), row.names = rownames(sig))
-  cell_metadata <- meta_data
+  gene_metadata <- data.frame(gene_short_name = rownames(expr_mat), row.names = rownames(expr_mat))
+  cell_metadata <- cell_metadata_df
   pd <- new("AnnotatedDataFrame", data = cell_metadata)
   fd <- new("AnnotatedDataFrame", data = gene_metadata)
-  cds <- newCellDataSet(sig,
+  cds <- newCellDataSet(expr_mat,
                         phenoData = pd,
                         featureData = fd,
                         lowerDetectionLimit = 0,
@@ -58,10 +54,10 @@ for(j in c(1,3:8,10)){
   scale_max = 3
   scale_min = -3
   cores=1
-  newdata <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
+  pseudotime_grid_df <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
                                          max(pData(cds_subset)$Pseudotime), length.out = 100))
   m <- genSmoothCurves(cds_subset, cores = cores, trend_formula = trend_formula,
-                       relative_expr = T, new_data = newdata)
+                       relative_expr = T, new_data = pseudotime_grid_df)
   m = m[!apply(m, 1, sum) == 0, ]
   
   if(norm_method == "log") {
@@ -75,15 +71,12 @@ for(j in c(1,3:8,10)){
   m[m < scale_min] = scale_min
   
   cor_matrix[[j]] <- vector("numeric", nrow(m))
-  pval_matrix[[j]] <- vector("numeric", nrow(m))
-  
+
   for(i in 1:nrow(m)){
-    cor_test_result <- cor.test(m[i,], newdata$Pseudotime,method = "pearson")
+    cor_test_result <- cor.test(m[i,], pseudotime_grid_df$Pseudotime,method = "pearson")
     cor_matrix[[j]][i] = cor_test_result$estimate
-    pval_matrix[[j]][i] = cor_test_result$p.value
   }
   names(cor_matrix[[j]]) = rownames(m)
-  names(pval_matrix[[j]]) = rownames(m)
 }
 
 
@@ -96,36 +89,35 @@ low_high_pathways = c("HALLMARK_E2F_TARGETS","HALLMARK_EPITHELIAL_MESENCHYMAL_TR
                       "MP1..Cell.Cycle...G2.M",  "MP20.MYC",
                       "MP30.PDAC.classical","HALLMARK_MYOGENESIS","HALLMARK_XENOBIOTIC_METABOLISM","Mesenchymal")
 all_pathways = c(high_low_pathways,low_high_pathways)
-length(c(high_low_pathways,low_high_pathways))
 
-cor_matrix2 = list()
+pathway_cor_by_cancer = list()
 for(i in c(1,3:8,10)){
-  cor_matrix2[[i]] = cor_matrix[[i]][which(names(cor_matrix[[i]]) %in% c(high_low_pathways,low_high_pathways))]
+  pathway_cor_by_cancer[[i]] = cor_matrix[[i]][which(names(cor_matrix[[i]]) %in% c(high_low_pathways,low_high_pathways))]
 }
 
-Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
 
-names(cor_matrix2) = Cancer_list[c(1,3:11)]
+names(pathway_cor_by_cancer) = cancer_names[c(1,3:11)]
 
-cor_mat_combined <- matrix(NA, nrow = length(all_pathways), ncol = length(cor_matrix2))
-rownames(cor_mat_combined) <- all_pathways
-colnames(cor_mat_combined) <- Cancer_list[c(1,3:11)]
+pathway_cor_mat <- matrix(NA, nrow = length(all_pathways), ncol = length(pathway_cor_by_cancer))
+rownames(pathway_cor_mat) <- all_pathways
+colnames(pathway_cor_mat) <- cancer_names[c(1,3:11)]
 
 for(i in c(1,3:8,10)){
-  cancer_name <- Cancer_list[i]
-  cor_vector <- cor_matrix2[[i]]
+  cancer_name <- cancer_names[i]
+  cor_vector <- pathway_cor_by_cancer[[i]]
   
   cor_vector <- sapply(cor_vector, function(x) if(is.null(x)) NA else x)
   cor_vector <- cor_vector[match(all_pathways, names(cor_vector))]
   cor_vector = unname(cor_vector)
-  col_index <- match(cancer_name, colnames(cor_mat_combined))
+  col_index <- match(cancer_name, colnames(pathway_cor_mat))
   
-  cor_mat_combined[, col_index] <- unlist(unname(cor_vector))
+  pathway_cor_mat[, col_index] <- unlist(unname(cor_vector))
 }
-cor_mat_combined = cor_mat_combined[,!colnames(cor_mat_combined) %in% c("OSCC","Pancreatic")]
-cor_mat_combined = data.frame(cor_mat_combined)
-cor_mat_combined$pathway = rownames(cor_mat_combined)
-cor_mat_combined$category = c(rep("High_Low",length(high_low_pathways)),rep("Low_High",length(low_high_pathways)))
+pathway_cor_mat = pathway_cor_mat[,!colnames(pathway_cor_mat) %in% c("OSCC","Pancreatic")]
+pathway_cor_mat = data.frame(pathway_cor_mat)
+pathway_cor_mat$pathway = rownames(pathway_cor_mat)
+pathway_cor_mat$category = c(rep("High_Low",length(high_low_pathways)),rep("Low_High",length(low_high_pathways)))
 
 IT_high_low_pathways = read.csv('./data/IT_sig_High_Low.csv')
 IT_low_high_pathways = read.csv('./data/IT_sig_Low_High.csv')
@@ -135,52 +127,52 @@ IT_low_high_pathways$X = gsub("HALLMARK_","",IT_low_high_pathways$X)
 IT_high_low_pathways$X = gsub("MP18.","",IT_high_low_pathways$X)
 IT_low_high_pathways$X = gsub("MP18.","",IT_low_high_pathways$X)
 
-cor_mat_long = data.frame()
+pathway_cor_long_df = data.frame()
 for(i in 1:length(high_low_pathways)){
   cancer_high_low = unlist(strsplit(IT_high_low_pathways[i,]$overlap_cancer_types,', '))
-  long_format <- melt(cor_mat_combined[i,colnames(cor_mat_combined) %in% c(cancer_high_low,'pathway')]
+  long_format <- melt(pathway_cor_mat[i,colnames(pathway_cor_mat) %in% c(cancer_high_low,'pathway')]
                       , id.vars = "pathway", variable.name = "cancer_type", value.name = "value")
-  cor_mat_long = rbind(cor_mat_long,long_format)
+  pathway_cor_long_df = rbind(pathway_cor_long_df,long_format)
 }
 
-for(i in 9:nrow(cor_mat_combined)){
+for(i in 9:nrow(pathway_cor_mat)){
   k = i - 8
   cancer_low_high = unlist(strsplit(IT_low_high_pathways[k,]$overlap_cancer_types,', '))
-  long_format <- melt(cor_mat_combined[i,colnames(cor_mat_combined) %in% c(cancer_low_high,'pathway')]
+  long_format <- melt(pathway_cor_mat[i,colnames(pathway_cor_mat) %in% c(cancer_low_high,'pathway')]
                       , id.vars = "pathway", variable.name = "cancer_type", value.name = "value")
-  cor_mat_long = rbind(cor_mat_long,long_format)
+  pathway_cor_long_df = rbind(pathway_cor_long_df,long_format)
 }
 
-cor_mat_long$pathway = factor(cor_mat_long$pathway,levels = (c(all_pathways)))
+pathway_cor_long_df$pathway = factor(pathway_cor_long_df$pathway,levels = (c(all_pathways)))
 
-cor_mat_average_values <- cor_mat_long %>%
+pathway_cor_summary_df <- pathway_cor_long_df %>%
   group_by(pathway) %>%
   summarise(average_value = mean(value, na.rm = TRUE))
 
-cor_mat_average_values$pathway = gsub('HALLMARK_','',cor_mat_average_values$pathway)
+pathway_cor_summary_df$pathway = gsub('HALLMARK_','',pathway_cor_summary_df$pathway)
 
-cor_mat_average_values$category = c(rep("High_Low",length(high_low_pathways)),rep("Low_High",length(low_high_pathways)))
+pathway_cor_summary_df$category = c(rep("High_Low",length(high_low_pathways)),rep("Low_High",length(low_high_pathways)))
 
 
-cor_mat_average_values = cor_mat_average_values[cor_mat_average_values$pathway %in% c('INTERFERON_ALPHA_RESPONSE','INTERFERON_GAMMA_RESPONSE',"MP18.Interferon.MHC.II..II.",'INFLAMMATORY_RESPONSE',"APOPTOSIS",
+pathway_cor_summary_df = pathway_cor_summary_df[pathway_cor_summary_df$pathway %in% c('INTERFERON_ALPHA_RESPONSE','INTERFERON_GAMMA_RESPONSE',"MP18.Interferon.MHC.II..II.",'INFLAMMATORY_RESPONSE',"APOPTOSIS",
                                                                                       'EPITHELIAL_MESENCHYMAL_TRANSITION','Mesenchymal','MP30.PDAC.classical','MP1..Cell.Cycle...G2.M','MP20.MYC'),]
 
-cor_mat_average_values = cor_mat_average_values[order(cor_mat_average_values$average_value),]
-cor_mat_average_values$pathway[which(cor_mat_average_values=="INTERFERON_ALPHA_RESPONSE")] = "Interferon-alpha response"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="INTERFERON_GAMMA_RESPONSE")] = "Interferon-gamma response"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="MP18.Interferon.MHC.II..II.")] = "MHC-II"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="INFLAMMATORY_RESPONSE")] = "Inflammatory"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="APOPTOSIS")] = "Apoptosis"
+pathway_cor_summary_df = pathway_cor_summary_df[order(pathway_cor_summary_df$average_value),]
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="INTERFERON_ALPHA_RESPONSE")] = "Interferon-alpha response"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="INTERFERON_GAMMA_RESPONSE")] = "Interferon-gamma response"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="MP18.Interferon.MHC.II..II.")] = "MHC-II"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="INFLAMMATORY_RESPONSE")] = "Inflammatory"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="APOPTOSIS")] = "Apoptosis"
 
-cor_mat_average_values$pathway[which(cor_mat_average_values=="EPITHELIAL_MESENCHYMAL_TRANSITION")] = "EMT"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="Mesenchymal")] = "Mesenchymal"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="MP20.MYC")] = "MYC"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="MP1..Cell.Cycle...G2.M")] = "G2M Cell Cycle"
-cor_mat_average_values$pathway[which(cor_mat_average_values=="MP30.PDAC.classical")] = "KRAS signaling"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="EPITHELIAL_MESENCHYMAL_TRANSITION")] = "EMT"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="Mesenchymal")] = "Mesenchymal"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="MP20.MYC")] = "MYC"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="MP1..Cell.Cycle...G2.M")] = "G2M Cell Cycle"
+pathway_cor_summary_df$pathway[which(pathway_cor_summary_df=="MP30.PDAC.classical")] = "KRAS signaling"
 
-cor_mat_average_values$pathway = factor(cor_mat_average_values$pathway,levels = (cor_mat_average_values$pathway))
+pathway_cor_summary_df$pathway = factor(pathway_cor_summary_df$pathway,levels = (pathway_cor_summary_df$pathway))
 
-a= ggplot(cor_mat_average_values, aes(x = pathway, y = average_value,fill=category)) +
+a= ggplot(pathway_cor_summary_df, aes(x = pathway, y = average_value,fill=category)) +
   geom_bar(stat = "identity") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   theme_classic() +
@@ -210,7 +202,7 @@ cancer_type_map <- c(
 
 target_n <- 8
 
-cor_mat_cancer_prop <- cor_mat_long %>%
+cor_mat_cancer_prop <- pathway_cor_long_df %>%
   mutate(
     cancer_type = as.character(cancer_type),
     cancer_type = ifelse(cancer_type == "ccRCC", "CCRCC", cancer_type),
@@ -284,8 +276,6 @@ ten_pathways = c("HALLMARK_INTERFERON_ALPHA_RESPONSE",
                  "MP30.PDAC.classical",
                  "Mesenchymal")
 
-high_low_pathways = c()
-
 add.flag <- function(pheatmap,kept.labels) {
   
   heatmap <- pheatmap$gtable
@@ -333,8 +323,8 @@ add.flag <- function(pheatmap,kept.labels) {
   rn_idx <- which(heatmap$layout$name == "row_names")
   new.label <- heatmap$grobs[[rn_idx]]
   
-  paths <- a2$tree_row$labels
-  cl_id <- cutree(a2$tree_row, k = 2)[paths]
+  paths <- pseudotime_heatmap_obj$tree_row$labels
+  cl_id <- cutree(pseudotime_heatmap_obj$tree_row, k = 2)[paths]
   cluster_map <- c(`1`="High_Low", `2`="Low_High")
   cl_name <- setNames(cluster_map[as.character(cl_id)], paths)
   
@@ -389,7 +379,7 @@ add.flag <- function(pheatmap,kept.labels) {
 
 for(j in c(8,3,7,6)){
   cancer_index = j
-  Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+  cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
   
   tls_object = "IT"
   
@@ -397,17 +387,14 @@ for(j in c(8,3,7,6)){
   sig_variable_name <- paste0("combined_sig_", tls_object)
   meta_data_variable_name <- paste0("combined_meta_data_", tls_object)
   
-  sig <- get(sig_variable_name)
+  expr_mat <- get(sig_variable_name)
+  cell_metadata_df <- get(meta_data_variable_name)
   
-  
-  
-  meta_data <- get(meta_data_variable_name)
-  
-  gene_metadata <- data.frame(gene_short_name = rownames(sig), row.names = rownames(sig))
-  cell_metadata <- meta_data
+  gene_metadata <- data.frame(gene_short_name = rownames(expr_mat), row.names = rownames(expr_mat))
+  cell_metadata <- cell_metadata_df
   pd <- new("AnnotatedDataFrame", data = cell_metadata)
   fd <- new("AnnotatedDataFrame", data = gene_metadata)
-  cds <- newCellDataSet(sig,
+  cds <- newCellDataSet(expr_mat,
                         phenoData = pd,
                         featureData = fd,
                         lowerDetectionLimit = 0,
@@ -432,10 +419,10 @@ for(j in c(8,3,7,6)){
   scale_max = 3
   scale_min = -3
   cores=1
-  newdata <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
+  pseudotime_grid_df <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
                                          max(pData(cds_subset)$Pseudotime), length.out = 100))
   m <- genSmoothCurves(cds_subset, cores = cores, trend_formula = trend_formula,
-                       relative_expr = T, new_data = newdata)
+                       relative_expr = T, new_data = pseudotime_grid_df)
   m = m[!apply(m, 1, sum) == 0, ]
   
   if(norm_method == "log") {
@@ -450,8 +437,8 @@ for(j in c(8,3,7,6)){
   
   diff_test_res_sig = read.csv(file=paste0('./data/',"ST_",cancer_index,"_", tls_object,'_sig_trend.csv'),row.names = 1)
   
-  newdata2 = newdata
-  colnames(newdata2) = 'Distance'
+  pseudotime_grid_df2 = pseudotime_grid_df
+  colnames(pseudotime_grid_df2) = 'Distance'
   
   cancer_map <- c(
     Gastric = "STAD",
@@ -459,21 +446,21 @@ for(j in c(8,3,7,6)){
     Breast  = "BRCA",
     Lung    = "LUAD"
   )
-  file_name <- cancer_map[Cancer_list[j]]
+  file_name <- cancer_map[cancer_names[j]]
   
   if(j == 3){
     breast_remove = c("MP6.Hypoxia","Hypoxia","HALLMARK_CHOLESTEROL_HOMEOSTASIS","HALLMARK_MTORC1_SIGNALING","HALLMARK_MYOGENESIS","AC","HALLMARK_UNFOLDED_PROTEIN_RESPONSE","HALLMARK_PEROXISOME",
                       "HALLMARK_P53_PATHWAY","HALLMARK_E2F_TARGETS","HALLMARK_HYPOXIA","Alveolar")
     genes_breast = rownames(diff_test_res_sig[diff_test_res_sig$trend %in% c('Low_High','High_Low'),])
     genes_breast = genes_breast[!genes_breast %in% breast_remove]
-    a2 = plot_pseudotime_heatmap(cds[genes_breast,],
+    pseudotime_heatmap_obj = plot_pseudotime_heatmap(cds[genes_breast,],
                                  num_clusters = 2,
-                                 add_annotation_col = newdata2,
+                                 add_annotation_col = pseudotime_grid_df2,
                                  cores = 1,
                                  show_rownames = T,return_heatmap=T)
     
     pdf(paste0('./result/Fig4C_',file_name,'.pdf'))
-    add.flag(a2,kept.labels = ten_pathways)
+    add.flag(pseudotime_heatmap_obj,kept.labels = ten_pathways)
     dev.off()
   }
   
@@ -483,14 +470,14 @@ for(j in c(8,3,7,6)){
     genes_remove = rownames(diff_test_res_sig[diff_test_res_sig$trend %in% c('Low_High','High_Low'),])
     genes_remove = genes_remove[!genes_remove %in% pathway_remove]
     
-    a2 = plot_pseudotime_heatmap(cds[genes_remove,],
+    pseudotime_heatmap_obj = plot_pseudotime_heatmap(cds[genes_remove,],
                                  num_clusters = 2,
-                                 add_annotation_col = newdata2,
+                                 add_annotation_col = pseudotime_grid_df2,
                                  cores = 1,
                                  show_rownames = T,return_heatmap=T)
     
     pdf(paste0('./result/Fig4C_',file_name,'.pdf'))
-    add.flag(a2,kept.labels = ten_pathways)
+    add.flag(pseudotime_heatmap_obj,kept.labels = ten_pathways)
     dev.off()
   }
   
@@ -499,14 +486,14 @@ for(j in c(8,3,7,6)){
                        "HALLMARK_ESTROGEN_RESPONSE_EARLY","Hypoxia")
     genes_pathway = rownames(diff_test_res_sig[diff_test_res_sig$trend %in% c('Low_High','High_Low'),])
     genes_pathway = genes_pathway[!genes_pathway %in% pathway_remove]
-    a2 = plot_pseudotime_heatmap(cds[genes_pathway,],
+    pseudotime_heatmap_obj = plot_pseudotime_heatmap(cds[genes_pathway,],
                                  num_clusters = 2,
-                                 add_annotation_col = newdata2,
+                                 add_annotation_col = pseudotime_grid_df2,
                                  cores = 1,
                                  show_rownames = T,return_heatmap=T)
     
     pdf(paste0('./result/Fig4C_',file_name,'.pdf'))
-    add.flag(a2,kept.labels = ten_pathways)
+    add.flag(pseudotime_heatmap_obj,kept.labels = ten_pathways)
     dev.off()
   }
   
@@ -517,16 +504,16 @@ for(j in c(8,3,7,6)){
                        "MP4..Chromatin","HALLMARK_CHOLESTEROL_HOMEOSTASIS","HALLMARK_MYOGENESIS","MP25.Astrocytes")
     genes_pathway = rownames(diff_test_res_sig[diff_test_res_sig$trend %in% c('Low_High','High_Low'),])
     genes_pathway = genes_pathway[!genes_pathway %in% pathway_remove]
-    a2 = plot_pseudotime_heatmap(cds[genes_pathway,],
+    pseudotime_heatmap_obj = plot_pseudotime_heatmap(cds[genes_pathway,],
                                  num_clusters = 2,
-                                 add_annotation_col = newdata2,
+                                 add_annotation_col = pseudotime_grid_df2,
                                  cores = 1,
                                  show_rownames = T,return_heatmap=T)
     
     
     
     pdf(paste0('./result/Fig4C_',file_name,'.pdf'))
-    add.flag(a2,kept.labels = ten_pathways)
+    add.flag(pseudotime_heatmap_obj,kept.labels = ten_pathways)
     dev.off()
   }
 }
@@ -551,26 +538,26 @@ IT_high_low_pathways = IT_high_low_pathways[IT_high_low_pathways$X %in% high_low
 IT_low_high_pathways = IT_low_high_pathways[IT_low_high_pathways$X %in% low_high_pathways,]
 all_pathways = c(IT_high_low_pathways$X,IT_low_high_pathways$X)
 
-Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
 
 colors <- c("#6B3F98",brewer.pal(8, 'Paired'))
 cancer_types <- c("OVCA","KIRC","BLCA","","CRC","BRCA","LIHC","STAD","LUAD")
 color_mapping <- setNames(colors[1:length(cancer_types)], cancer_types)
 
-df_all3 = list()
+pathway_curve_df3 = list()
 for(i in 1:length(all_pathways)){
   if(i <= length(IT_high_low_pathways$X)){
-    cancer_index_graph = unlist(strsplit(IT_high_low_pathways[IT_high_low_pathways$X == all_pathways[i],'overlap_cancer_types'],", "))
-    second_for_index = which(Cancer_list %in% cancer_index_graph)
+    selected_cancer_names = unlist(strsplit(IT_high_low_pathways[IT_high_low_pathways$X == all_pathways[i],'overlap_cancer_types'],", "))
+    selected_cancer_idx = which(cancer_names %in% selected_cancer_names)
   } else{
-    cancer_index_graph = unlist(strsplit(IT_low_high_pathways[IT_low_high_pathways$X == all_pathways[i],'overlap_cancer_types'],", "))
-    second_for_index = which(Cancer_list %in% cancer_index_graph)
+    selected_cancer_names = unlist(strsplit(IT_low_high_pathways[IT_low_high_pathways$X == all_pathways[i],'overlap_cancer_types'],", "))
+    selected_cancer_idx = which(cancer_names %in% selected_cancer_names)
   }
   
-  df_all = data.frame()
-  for(j in second_for_index){
+  pathway_curve_df = data.frame()
+  for(j in selected_cancer_idx){
     cancer_index = j
-    Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+    cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
     
     tls_object = "IT"
     
@@ -578,14 +565,14 @@ for(i in 1:length(all_pathways)){
     sig_variable_name <- paste0("combined_sig_", tls_object)
     meta_data_variable_name <- paste0("combined_meta_data_", tls_object)
     
-    sig <- get(sig_variable_name)
-    meta_data <- get(meta_data_variable_name)
+    expr_mat <- get(sig_variable_name)
+    cell_metadata_df <- get(meta_data_variable_name)
     
-    gene_metadata <- data.frame(gene_short_name = rownames(sig), row.names = rownames(sig))
-    cell_metadata <- meta_data
+    gene_metadata <- data.frame(gene_short_name = rownames(expr_mat), row.names = rownames(expr_mat))
+    cell_metadata <- cell_metadata_df
     pd <- new("AnnotatedDataFrame", data = cell_metadata)
     fd <- new("AnnotatedDataFrame", data = gene_metadata)
-    cds <- newCellDataSet(sig,
+    cds <- newCellDataSet(expr_mat,
                           phenoData = pd,
                           featureData = fd,
                           lowerDetectionLimit = 0,
@@ -610,10 +597,10 @@ for(i in 1:length(all_pathways)){
     scale_max = 3
     scale_min = -3
     cores=1
-    newdata <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
+    pseudotime_grid_df <- data.frame(Pseudotime = seq(min(pData(cds)$Pseudotime),
                                            max(pData(cds_subset)$Pseudotime), length.out = 100))
     m <- genSmoothCurves(cds_subset, cores = cores, trend_formula = trend_formula,
-                         relative_expr = T, new_data = newdata)
+                         relative_expr = T, new_data = pseudotime_grid_df)
     m = m[!apply(m, 1, sum) == 0, ]
     
     if(norm_method == "log") {
@@ -627,9 +614,9 @@ for(i in 1:length(all_pathways)){
     m[m < scale_min] = scale_min
     
     m2 = m[rownames(m) %in% all_pathways[i],]
-    df = cbind(m2,newdata,Cancer_list[j])
+    df = cbind(m2,pseudotime_grid_df,cancer_names[j])
     colnames(df) = c("Value","Distance","Cancer_type")
-    df_all = rbind(df_all,df)
+    pathway_curve_df = rbind(pathway_curve_df,df)
   }
   
   cancer_type_map <- c(
@@ -645,11 +632,11 @@ for(i in 1:length(all_pathways)){
     "Ovarian" = "OVCA",
     "Liver" = "LIHC"
   )
-  df_all2 = df_all
-  df_all2$Cancer_type = ifelse(df_all2$Cancer_type == 'ccRCC',"CCRCC",df_all2$Cancer_type)
-  df_all2$Cancer_type <- unname(cancer_type_map[df_all2$Cancer_type])
-  df_all2$Cancer_type = factor(df_all2$Cancer_type,levels = rev(cancer_types[cancer_types!='']))
-  df_all3[[i]] = df_all2
+  pathway_curve_df2 = pathway_curve_df
+  pathway_curve_df2$Cancer_type = ifelse(pathway_curve_df2$Cancer_type == 'ccRCC',"CCRCC",pathway_curve_df2$Cancer_type)
+  pathway_curve_df2$Cancer_type <- unname(cancer_type_map[pathway_curve_df2$Cancer_type])
+  pathway_curve_df2$Cancer_type = factor(pathway_curve_df2$Cancer_type,levels = rev(cancer_types[cancer_types!='']))
+  pathway_curve_df3[[i]] = pathway_curve_df2
 }
 
 
@@ -670,12 +657,12 @@ all_pathways_rename[which(all_pathways_rename=="INTERFERON ALPHA RESPONSE")] = '
 all_pathways_rename[which(all_pathways_rename=="INTERFERON GAMMA RESPONSE")] = 'Interferon-gamma response'
 
 idx_myc <- which(all_pathways_rename == "MYC")
-df_all3[[idx_myc]] <-
-  df_all3[[idx_myc]][df_all3[[idx_myc]]$Cancer_type != "BLCA", ]
+pathway_curve_df3[[idx_myc]] <-
+  pathway_curve_df3[[idx_myc]][pathway_curve_df3[[idx_myc]]$Cancer_type != "BLCA", ]
 
 
 for(i in 1:10){
-  a <- ggplot(df_all3[[i]], aes(x = Distance, y = Value, color = Cancer_type)) +
+  a <- ggplot(pathway_curve_df3[[i]], aes(x = Distance, y = Value, color = Cancer_type)) +
     geom_line(linewidth = 0.6) +
     theme_classic(base_size = 6) +
     scale_colour_manual(values = color_mapping) +
@@ -711,22 +698,28 @@ for(i in 1:10){
 rm(list=ls())
 
 #### Figure 4E ####
+# Before running the script below, first reconstruct the two .RData files
+# by concatenating their split parts in the terminal.
+#cat ./data/ST_6_combined_IT_objects.part_* > \
+#./data/ST_6_combined_IT_objects.RData
+#cat ./ST_8_combined_IT_objects.part_* > \
+#./ST_8_combined_IT_objects.RData
 IT_high_low_genes <- read.csv('./data/IT_High_Low.csv')
 
-Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
 
 high_low_genes = c("TNFRSF14","CXCL16","CXCL10","CXCL11")
 
 for(pathway in high_low_genes) {
-  cancer_index_graph <- unlist(strsplit(IT_high_low_genes[IT_high_low_genes$X == pathway, 'overlap_cancer_types'], ", "))
-  second_for_index <- which(Cancer_list %in% cancer_index_graph)
+  selected_cancer_names <- unlist(strsplit(IT_high_low_genes[IT_high_low_genes$X == pathway, 'overlap_cancer_types'], ", "))
+  selected_cancer_idx <- which(cancer_names %in% selected_cancer_names)
   
-  df_all <- data.frame()
+  pathway_curve_df <- data.frame()
   
-  for(j in second_for_index) {
+  for(j in selected_cancer_idx) {
     cancer_index <- j
     
-    Cancer_list <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
+    cancer_names <- c("Bladder", "Brain", "Breast", "ccRCC", "Colorectal", "Gastric", "Liver", "Lung", "OSCC", "Ovarian", "Pancreatic")
     
     tls_object <- "IT"
     
@@ -734,14 +727,14 @@ for(pathway in high_low_genes) {
     sig_variable_name <- paste0("combined_counts_", tls_object)
     meta_data_variable_name <- paste0("combined_meta_data_", tls_object)
     
-    sig <- get(sig_variable_name)
-    meta_data <- get(meta_data_variable_name)
+    expr_mat <- get(sig_variable_name)
+    cell_metadata_df <- get(meta_data_variable_name)
     
-    gene_metadata <- data.frame(gene_short_name = rownames(sig), row.names = rownames(sig))
-    cell_metadata <- meta_data
+    gene_metadata <- data.frame(gene_short_name = rownames(expr_mat), row.names = rownames(expr_mat))
+    cell_metadata <- cell_metadata_df
     pd <- new("AnnotatedDataFrame", data = cell_metadata)
     fd <- new("AnnotatedDataFrame", data = gene_metadata)
-    cds <- newCellDataSet(sig,
+    cds <- newCellDataSet(expr_mat,
                           phenoData = pd,
                           featureData = fd,
                           lowerDetectionLimit = 0,
@@ -759,11 +752,11 @@ for(pathway in high_low_genes) {
     scale_max <- 3
     scale_min <- -3
     cores <- 1
-    newdata <- data.frame(Pseudotime = seq(min(pData(cds_subset)$Pseudotime),
+    pseudotime_grid_df <- data.frame(Pseudotime = seq(min(pData(cds_subset)$Pseudotime),
                                            max(pData(cds_subset)$Pseudotime), length.out = 100))
     
     m <- genSmoothCurves(cds_subset, cores = cores, trend_formula = trend_formula,
-                         relative_expr = TRUE, new_data = newdata)
+                         relative_expr = TRUE, new_data = pseudotime_grid_df)
     m <- m[!apply(m, 1, sum) == 0, ]
     
     if(norm_method == "log") {
@@ -777,9 +770,9 @@ for(pathway in high_low_genes) {
     m[m < scale_min] <- scale_min
     
     m2 <- m[rownames(m) %in% pathway, ]
-    df <- cbind(m2, newdata, Cancer_list[j])
+    df <- cbind(m2, pseudotime_grid_df, cancer_names[j])
     colnames(df) <- c("Value", "Distance", "Cancer_type")
-    df_all <- rbind(df_all, df)
+    pathway_curve_df <- rbind(pathway_curve_df, df)
   }
   
   cancer_type_map <- c(
@@ -795,26 +788,26 @@ for(pathway in high_low_genes) {
     "Ovarian" = "OVCA",
     "Liver" = "LIHC"
   )
-  df_all2 <- df_all
-  df_all2$Cancer_type <- ifelse(df_all2$Cancer_type == 'ccRCC', "CCRCC", df_all2$Cancer_type)
-  df_all2$Cancer_type <- unname(cancer_type_map[df_all2$Cancer_type])
+  pathway_curve_df2 <- pathway_curve_df
+  pathway_curve_df2$Cancer_type <- ifelse(pathway_curve_df2$Cancer_type == 'ccRCC', "CCRCC", pathway_curve_df2$Cancer_type)
+  pathway_curve_df2$Cancer_type <- unname(cancer_type_map[pathway_curve_df2$Cancer_type])
   
   colors <- c("#6B3F98", brewer.pal(10, 'Paired'))
   cancer_types <- c("OVCA", "KIRC", "BLCA", "", "CRC", "BRCA", "LIHC", "STAD", "LUAD","OSCC","PAAD")
   color_mapping <- setNames(colors[1:length(cancer_types)], cancer_types)
-  df_all2$Cancer_type <- factor(df_all2$Cancer_type, levels = rev(cancer_types[cancer_types != '']))
+  pathway_curve_df2$Cancer_type <- factor(pathway_curve_df2$Cancer_type, levels = rev(cancer_types[cancer_types != '']))
   
-  df_all3 <- df_all2[df_all2$Distance < 0.75, ]
+  pathway_curve_df3 <- pathway_curve_df2[pathway_curve_df2$Distance < 0.75, ]
   
   if (pathway == "CXCL16") {
-    df_all3 = df_all3[!df_all3$Cancer_type %in% c('LUAD','LIHC'),]
+    pathway_curve_df3 = pathway_curve_df3[!pathway_curve_df3$Cancer_type %in% c('LUAD','LIHC'),]
   }
   
   if (pathway == "CXCL11") {
-    df_all3 = df_all3[!df_all3$Cancer_type %in% c('STAD'),]
+    pathway_curve_df3 = pathway_curve_df3[!pathway_curve_df3$Cancer_type %in% c('STAD'),]
   }
   
-  a <- ggplot(df_all3, aes(x = Distance, y = Value, color = Cancer_type)) +
+  a <- ggplot(pathway_curve_df3, aes(x = Distance, y = Value, color = Cancer_type)) +
     geom_line(linewidth = 0.6) +
     theme_classic(base_size = 6) +
     scale_colour_manual(values = color_mapping) +

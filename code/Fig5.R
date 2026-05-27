@@ -6,56 +6,54 @@ library(readxl)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library(ggpubr)
 library(ComplexHeatmap)
 library(reshape2)
 library(ggalluvial)
-library(gtools)
+
 
 ### Figure 5A, 5G and 5M were created with Biorender ###
 
 #### Figure 5B ####
-crc_meta_to_ST = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
-crc_meta_to_ST = crc_meta_to_ST[crc_meta_to_ST$Sample_ID != 'TMA',]
+crc_st_sample_map_df = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
+crc_st_sample_map_df = crc_st_sample_map_df[crc_st_sample_map_df$Sample_ID != 'TMA',]
 
 crc_meta = read.csv("./data_meta/ST_CRC_cohort_meta2.csv")
 
-ST_meta22 = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
+crc_patient_meta_raw_df = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
 
-ST_meta2 <- ST_meta22 %>%
+crc_patient_mutation_df <- crc_patient_meta_raw_df %>%
   group_by(Patient) %>%
   summarize(
     APC.status = ifelse(any(APC.status == "APC mut."), "mutant", "WT"),
     KRAS.status = ifelse(any(KRAS.status == "KRAS mut."), "mutant", "WT"),
-    TP53.status = ifelse(any(TP53.status == "TP53 mut."), "mutant", "WT"),
     BRAF.status = ifelse(any(BRAF.status == "BRAF mut."), "mutant", "WT"))
 
-ST_meta2 = data.frame(ST_meta2)
-ST_meta2 = ST_meta2[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
+crc_patient_mutation_df = data.frame(crc_patient_mutation_df)
+crc_patient_mutation_df = crc_patient_mutation_df[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
 
-crc_meta_combined_long = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
+crc_meta_with_st_long_df = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
 
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined_long$patient_name,]
-crc_meta_combined_long2 = merge(crc_meta_combined_long,ST_meta2_filtered,by.x='patient_name',by.y="Patient",all=T)
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_with_st_long_df$patient_name,]
+crc_meta_with_mutation_long_df = merge(crc_meta_with_st_long_df,crc_patient_mutation_filtered_df,by.x='patient_name',by.y="Patient",all=T)
 
 crc_meta = crc_meta[,c("sample_key",'patient_name','tumor_loc',"tumor_grade","tumor_type","CIN.Status","mets")]
 crc_meta$mets = ifelse(crc_meta$mets == "",'Mets_No','Mets_Yes')
-crc_meta_combined = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined$patient_name,]
+crc_meta_combined = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_combined$patient_name,]
 
-crc_meta_combined2 = merge(crc_meta_combined,ST_meta2_filtered,by.x='patient_name','Patient',all=T)
+crc_sample_meta_merged_df = merge(crc_meta_combined,crc_patient_mutation_filtered_df,by.x='patient_name','Patient',all=T)
 
 tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% crc_meta_combined2$ST_ID,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% crc_sample_meta_merged_df$ST_ID,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","PTLS","ETLS", "STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","PTLS","ETLS", "STLS")
 
 
-crc_tls_count_with_meta = merge(crc_meta_combined2,tls_classification3,by.x='ST_ID',by.y='Sample_ID',all=T)
+crc_tls_count_with_meta = merge(crc_sample_meta_merged_df,tls_counts_by_sample_df,by.x='ST_ID',by.y='Sample_ID',all=T)
 
 crc_tls_count_with_meta$tumor_side = ifelse(crc_tls_count_with_meta$tumor_loc %in% c('Ascending','Cecum','Hepatic Flexure','Transverse'),'Right_side',
                                             ifelse(crc_tls_count_with_meta$tumor_loc %in% c('Descending','Sigmoid'),'Left_side',
@@ -103,15 +101,15 @@ dev.off()
 
 crc_tls_count_with_meta$mets = factor(crc_tls_count_with_meta$mets,levels = c('Mets_No','Mets_Yes'),
                                       labels=c('No Mets','Mets'))
-crc_tls_count_with_meta_heatmap = crc_tls_count_with_meta
-crc_tls_count_with_meta_heatmap = data.frame(crc_tls_count_with_meta_heatmap)
-rownames(crc_tls_count_with_meta_heatmap) = crc_tls_count_with_meta_heatmap$ST_ID
-crc_tls_count_with_meta_heatmap2 = crc_tls_count_with_meta_heatmap[,-which(colnames(crc_tls_count_with_meta_heatmap) %in% c('ST_ID','sample_key',"PTLS","ETLS","STLS","Total_counts","Total_counts_sample"))]
-crc_tls_count_with_meta_heatmap2 = crc_tls_count_with_meta_heatmap2[,c('tumor_side','tumor_loc','tumor_grade','tumor_type','mets','KRAS.status','patient_name')]
-crc_tls_count_with_meta_heatmap2 = crc_tls_count_with_meta_heatmap2[order(crc_tls_count_with_meta_heatmap2$tumor_side,decreasing = T),]
-crc_tls_count_with_meta_heatmap2 = t(crc_tls_count_with_meta_heatmap2)
+crc_meta_heatmap_df = crc_tls_count_with_meta
+crc_meta_heatmap_df = data.frame(crc_meta_heatmap_df)
+rownames(crc_meta_heatmap_df) = crc_meta_heatmap_df$ST_ID
+crc_meta_heatmap_mat = crc_meta_heatmap_df[,-which(colnames(crc_meta_heatmap_df) %in% c('ST_ID','sample_key',"PTLS","ETLS","STLS","Total_counts","Total_counts_sample"))]
+crc_meta_heatmap_mat = crc_meta_heatmap_mat[,c('tumor_side','tumor_loc','tumor_grade','tumor_type','mets','KRAS.status','patient_name')]
+crc_meta_heatmap_mat = crc_meta_heatmap_mat[order(crc_meta_heatmap_mat$tumor_side,decreasing = T),]
+crc_meta_heatmap_mat = t(crc_meta_heatmap_mat)
 
-rownames(crc_tls_count_with_meta_heatmap2) <- c(
+rownames(crc_meta_heatmap_mat) <- c(
   "Tumor side",
   "Tumor location",
   "Tumor grade",
@@ -120,7 +118,7 @@ rownames(crc_tls_count_with_meta_heatmap2) <- c(
   "KRAS status",
   "Patient ID"
 )
-colors = c(
+annotation_color_map = c(
   "Right_side"="#79AF97FF",
   "Left_side"="#374E55FF",
   'Ascending' = "#B24745FF",
@@ -172,8 +170,8 @@ colors = c(
   "SR00001" = "#d47e2e"
 )
 
-hmap2 <- Heatmap(crc_tls_count_with_meta_heatmap2, 
-                 col = colors,
+metadata_heatmap <- Heatmap(crc_meta_heatmap_mat, 
+                 col = annotation_color_map,
                  na_col = 'white', 
                  rect_gp = grid::gpar(col = NA),
                  row_title = NULL, 
@@ -183,7 +181,7 @@ hmap2 <- Heatmap(crc_tls_count_with_meta_heatmap2,
                  column_title = NULL)
 
 pdf("./result/Fig5B_2.pdf",width = 15,height = 10)
-draw(hmap2)
+draw(metadata_heatmap)
 dev.off()
 rm(list = ls())
 
@@ -200,7 +198,7 @@ CRC_prop_table_melted$Var2 = factor(CRC_prop_table_melted$Var2,
 CRC_prop_table_melted$Var1 = factor(CRC_prop_table_melted$Var1,
                                     levels = c('Secondary Mature','Primary Mature','Immature'),labels=c("S-TLS","P-TLS","E-TLS"))
 
-cols <- c(
+fill_color_map <- c(
   "Carcinoma" = "#dca1a1",         
   "Adenoma" = "#7c9885",           
   "Smooth muscle" = "#d6ecf3",     
@@ -212,7 +210,7 @@ b = ggplot(CRC_prop_table_melted, aes(x = Var1, y = value, fill = Var2)) +
   geom_bar(position="stack", stat="identity") + 
   theme_classic() + 
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0))  + 
-  scale_fill_manual(values = cols) + coord_flip()
+  scale_fill_manual(values = fill_color_map) + coord_flip()
 
 pdf("./result/Fig5C.pdf")
 print(b)
@@ -244,47 +242,47 @@ dev.off()
 rm(list = ls())
 
 #### Figure 5E ####
-crc_meta_to_ST = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
-crc_meta_to_ST = crc_meta_to_ST[crc_meta_to_ST$Sample_ID != 'TMA',]
+crc_st_sample_map_df = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
+crc_st_sample_map_df = crc_st_sample_map_df[crc_st_sample_map_df$Sample_ID != 'TMA',]
 
 crc_meta = read.csv("./data_meta/ST_CRC_cohort_meta2.csv")
 
-ST_meta22 = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
+crc_patient_meta_raw_df = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
 
-ST_meta2 <- ST_meta22 %>%
+crc_patient_mutation_df <- crc_patient_meta_raw_df %>%
   group_by(Patient) %>%
   summarize(
     APC.status = ifelse(any(APC.status == "APC mut."), "mutant", "WT"),
     KRAS.status = ifelse(any(KRAS.status == "KRAS mut."), "mutant", "WT"),
-    TP53.status = ifelse(any(TP53.status == "TP53 mut."), "mutant", "WT"),
+    
     BRAF.status = ifelse(any(BRAF.status == "BRAF mut."), "mutant", "WT"))
 
-ST_meta2 = data.frame(ST_meta2)
-ST_meta2 = ST_meta2[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
+crc_patient_mutation_df = data.frame(crc_patient_mutation_df)
+crc_patient_mutation_df = crc_patient_mutation_df[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
 
-crc_meta_combined_long = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
+crc_meta_with_st_long_df = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
 
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined_long$patient_name,]
-crc_meta_combined_long2 = merge(crc_meta_combined_long,ST_meta2_filtered,by.x='patient_name',by.y="Patient",all=T)
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_with_st_long_df$patient_name,]
+crc_meta_with_mutation_long_df = merge(crc_meta_with_st_long_df,crc_patient_mutation_filtered_df,by.x='patient_name',by.y="Patient",all=T)
 
 
 crc_meta = crc_meta[,c("sample_key",'patient_name',"tumor_type","tumor_grade","CIN.Status","mets")]
-crc_meta_combined = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined$patient_name,]
+crc_meta_combined = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_combined$patient_name,]
 
-crc_meta_combined2 = merge(crc_meta_combined,ST_meta2_filtered,by.x='patient_name','Patient',all=T)
+crc_sample_meta_merged_df = merge(crc_meta_combined,crc_patient_mutation_filtered_df,by.x='patient_name','Patient',all=T)
 
 tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% crc_meta_combined2$ST_ID,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% crc_sample_meta_merged_df$ST_ID,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","PTLS","ETLS", "STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","PTLS","ETLS", "STLS")
 
 
-crc_tls_count_with_meta = merge(crc_meta_combined2,tls_classification3,by.x='ST_ID',by.y='Sample_ID',all=T)
+crc_tls_count_with_meta = merge(crc_sample_meta_merged_df,tls_counts_by_sample_df,by.x='ST_ID',by.y='Sample_ID',all=T)
 
 crc_tls_count_with_meta$ETLS = ifelse(is.na(crc_tls_count_with_meta$ETLS),0,crc_tls_count_with_meta$ETLS)
 crc_tls_count_with_meta$PTLS = ifelse(is.na(crc_tls_count_with_meta$PTLS),0,crc_tls_count_with_meta$PTLS)
@@ -293,7 +291,7 @@ crc_tls_count_with_meta$Total_counts = rowSums(crc_tls_count_with_meta[,c("PTLS"
 
 crc_tls_count_with_meta = crc_tls_count_with_meta[crc_tls_count_with_meta$tumor_type != 'NL',]
 
-crc_tls_count_with_meta = crc_tls_count_with_meta <- crc_tls_count_with_meta %>%
+crc_tls_count_with_meta = crc_tls_count_with_meta %>%
   group_by(patient_name) %>%
   summarise(
     ETLS = sum(ETLS),
@@ -339,11 +337,11 @@ tumor_grade_tls_prop = prop.table(table(crc_tls_count_with_meta_wo_no_TLS$tumor_
 
 tumor_grade_tls_df <- as.data.frame(tumor_grade_tls_prop)
 
-colnames(tumor_grade_tls_df) <- c("Tumor_Grade", "TLS_Class", "Proportion")
+colnames(tumor_grade_tls_df) <- c("Tumor_Grade", "TLS_class", "Proportion")
 
-tumor_grade_tls_df$TLS_Class = as.character(tumor_grade_tls_df$TLS_Class)
-tumor_grade_tls_df = tumor_grade_tls_df[tumor_grade_tls_df$TLS_Class != 'No_TLS',]
-a=ggplot(tumor_grade_tls_df, aes(x = Tumor_Grade, y = Proportion, fill = TLS_Class)) +
+tumor_grade_tls_df$TLS_class = as.character(tumor_grade_tls_df$TLS_class)
+tumor_grade_tls_df = tumor_grade_tls_df[tumor_grade_tls_df$TLS_class != 'No_TLS',]
+a=ggplot(tumor_grade_tls_df, aes(x = Tumor_Grade, y = Proportion, fill = TLS_class)) +
   geom_bar(stat = "identity", position = "stack") +      
   scale_fill_manual(values = c("E-TLS" = "#71B28B", "P-TLS" ="#F06825","S-TLS"="#B3B1D8")) + 
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0))  + 
@@ -355,46 +353,46 @@ dev.off()
 rm(list = ls())
 
 #### Figure 5F ####
-crc_meta_to_ST = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
-crc_meta_to_ST = crc_meta_to_ST[crc_meta_to_ST$Sample_ID != 'TMA',]
+crc_st_sample_map_df = read_excel("./data_meta/ST_CRC_cohort_meta.xlsx")
+crc_st_sample_map_df = crc_st_sample_map_df[crc_st_sample_map_df$Sample_ID != 'TMA',]
 
 crc_meta = read.csv("./data_meta/ST_CRC_cohort_meta2.csv")
 
-ST_meta22 = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
+crc_patient_meta_raw_df = read.csv("./data_meta/ST_CRC_cohort_meta3.csv")
 
-ST_meta2 <- ST_meta22 %>%
+crc_patient_mutation_df <- crc_patient_meta_raw_df %>%
   group_by(Patient) %>%
   summarize(
     APC.status = ifelse(any(APC.status == "APC mut."), "mutant", "WT"),
     KRAS.status = ifelse(any(KRAS.status == "KRAS mut."), "mutant", "WT"),
-    TP53.status = ifelse(any(TP53.status == "TP53 mut."), "mutant", "WT"),
+    
     BRAF.status = ifelse(any(BRAF.status == "BRAF mut."), "mutant", "WT"))
 
-ST_meta2 = data.frame(ST_meta2)
-ST_meta2 = ST_meta2[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
+crc_patient_mutation_df = data.frame(crc_patient_mutation_df)
+crc_patient_mutation_df = crc_patient_mutation_df[,c('Patient',"APC.status","KRAS.status","BRAF.status")]
 
-crc_meta_combined_long = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
+crc_meta_with_st_long_df = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
 
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined_long$patient_name,]
-crc_meta_combined_long2 = merge(crc_meta_combined_long,ST_meta2_filtered,by.x='patient_name',by.y="Patient",all=T)
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_with_st_long_df$patient_name,]
+crc_meta_with_mutation_long_df = merge(crc_meta_with_st_long_df,crc_patient_mutation_filtered_df,by.x='patient_name',by.y="Patient",all=T)
 
 
 crc_meta = crc_meta[,c("sample_key",'patient_name',"tumor_type","tumor_grade","CIN.Status","mets")]
-crc_meta_combined = merge(crc_meta,crc_meta_to_ST,by.x='sample_key',by.y="Sample_ID")
-ST_meta2_filtered = ST_meta2[ST_meta2$Patient %in% crc_meta_combined$patient_name,]
+crc_meta_combined = merge(crc_meta,crc_st_sample_map_df,by.x='sample_key',by.y="Sample_ID")
+crc_patient_mutation_filtered_df = crc_patient_mutation_df[crc_patient_mutation_df$Patient %in% crc_meta_combined$patient_name,]
 
-crc_meta_combined2 = merge(crc_meta_combined,ST_meta2_filtered,by.x='patient_name','Patient',all=T)
+crc_sample_meta_merged_df = merge(crc_meta_combined,crc_patient_mutation_filtered_df,by.x='patient_name','Patient',all=T)
 
 tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% crc_meta_combined2$ST_ID,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% crc_sample_meta_merged_df$ST_ID,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","PTLS","ETLS", "STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","PTLS","ETLS", "STLS")
 
-crc_tls_count_with_meta = merge(crc_meta_combined2,tls_classification3,by.x='ST_ID',by.y='Sample_ID',all=T)
+crc_tls_count_with_meta = merge(crc_sample_meta_merged_df,tls_counts_by_sample_df,by.x='ST_ID',by.y='Sample_ID',all=T)
 
 crc_tls_count_with_meta$ETLS = ifelse(is.na(crc_tls_count_with_meta$ETLS),0,crc_tls_count_with_meta$ETLS)
 crc_tls_count_with_meta$PTLS = ifelse(is.na(crc_tls_count_with_meta$PTLS),0,crc_tls_count_with_meta$PTLS)
@@ -403,7 +401,7 @@ crc_tls_count_with_meta$Total_counts = rowSums(crc_tls_count_with_meta[,c("PTLS"
 
 crc_tls_count_with_meta = crc_tls_count_with_meta[crc_tls_count_with_meta$tumor_type != 'NL',]
 
-crc_tls_count_with_meta = crc_tls_count_with_meta <- crc_tls_count_with_meta %>%
+crc_tls_count_with_meta = crc_tls_count_with_meta %>%
   group_by(patient_name) %>%
   summarise(
     ETLS = sum(ETLS),
@@ -505,30 +503,30 @@ tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
 lihc_meta = read_excel('./data_meta/ST_LIHC_cohort_meta.xlsx')
-lihc_meta$Stage = ifelse(lihc_meta$Stage %in% c("Ia","Ib"),'I',lihc_meta$Stage)
+
 lihc_meta = lihc_meta[,colnames(lihc_meta) %in% c('Patient_ID','Etiology_of_liver_disease','BCLC_stage')]
 
-lihc_meta_with_ST_ID2 = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
-lihc_meta_with_ST_ID2 = lihc_meta_with_ST_ID2[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
-lihc_meta_with_ST_ID2 = data.frame(lihc_meta_with_ST_ID2)
+lihc_st_sample_map_df = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
+lihc_st_sample_map_df = lihc_st_sample_map_df[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
+lihc_st_sample_map_df = data.frame(lihc_st_sample_map_df)
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% lihc_meta_with_ST_ID2$Sample_ID2,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% lihc_st_sample_map_df$Sample_ID2,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","ETLS","PTLS","STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","ETLS","PTLS","STLS")
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_with_ST_ID2,tls_classification3,by.x='Sample_ID2',by.y='Sample_ID',all=T)
-colnames(lihc_meta_combined_with_TLS)[1] = 'ST_ID'
+lihc_meta_with_tls_df = merge(lihc_st_sample_map_df,tls_counts_by_sample_df,by.x='Sample_ID2',by.y='Sample_ID',all=T)
+colnames(lihc_meta_with_tls_df)[1] = 'ST_ID'
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_combined_with_TLS,lihc_meta,by='Patient_ID',all=T)
+lihc_meta_with_tls_df = merge(lihc_meta_with_tls_df,lihc_meta,by='Patient_ID',all=T)
 
-lihc_meta_combined_with_TLS$ETLS = ifelse(is.na(lihc_meta_combined_with_TLS$ETLS),0,lihc_meta_combined_with_TLS$ETLS)
-lihc_meta_combined_with_TLS$PTLS = ifelse(is.na(lihc_meta_combined_with_TLS$PTLS),0,lihc_meta_combined_with_TLS$PTLS)
-lihc_meta_combined_with_TLS$STLS = ifelse(is.na(lihc_meta_combined_with_TLS$STLS),0,lihc_meta_combined_with_TLS$STLS)
-lihc_meta_combined_with_TLS$Total_counts = rowSums(lihc_meta_combined_with_TLS[,c("PTLS","ETLS","STLS")])
-lihc_meta_combined_with_TLS$Sample_ID2 = paste0(lihc_meta_combined_with_TLS$Sample_ID,"_",lihc_meta_combined_with_TLS$Sample.Description)
-lihc_meta_combined_with_TLS = lihc_meta_combined_with_TLS %>%
+lihc_meta_with_tls_df$ETLS = ifelse(is.na(lihc_meta_with_tls_df$ETLS),0,lihc_meta_with_tls_df$ETLS)
+lihc_meta_with_tls_df$PTLS = ifelse(is.na(lihc_meta_with_tls_df$PTLS),0,lihc_meta_with_tls_df$PTLS)
+lihc_meta_with_tls_df$STLS = ifelse(is.na(lihc_meta_with_tls_df$STLS),0,lihc_meta_with_tls_df$STLS)
+lihc_meta_with_tls_df$Total_counts = rowSums(lihc_meta_with_tls_df[,c("PTLS","ETLS","STLS")])
+lihc_meta_with_tls_df$Sample_ID2 = paste0(lihc_meta_with_tls_df$Sample_ID,"_",lihc_meta_with_tls_df$Sample.Description)
+lihc_meta_with_tls_df = lihc_meta_with_tls_df %>%
   group_by(Sample_ID2) %>%
   mutate(Total_counts_sample = sum(Total_counts)) %>%
   ungroup()
@@ -536,8 +534,8 @@ lihc_meta_combined_with_TLS = lihc_meta_combined_with_TLS %>%
 
 order_vec <- c("Leading-edge", "Tumor", "Normal", "Portal vein tumor thrombus")
 
-lihc_meta_combined_with_TLS <-
-  lihc_meta_combined_with_TLS %>%
+lihc_meta_with_tls_df <-
+  lihc_meta_with_tls_df %>%
   arrange(
     match(Sample.Description, order_vec),
     desc(Total_counts_sample),
@@ -545,7 +543,7 @@ lihc_meta_combined_with_TLS <-
     desc(Total_counts)
   )
 
-lihc_meta_combined_with_TLS_long = lihc_meta_combined_with_TLS %>% 
+lihc_meta_combined_with_TLS_long = lihc_meta_with_tls_df %>% 
   pivot_longer(cols = c(ETLS,PTLS,STLS),names_to = "TLS", values_to = "TLS_Count")
 lihc_meta_combined_with_TLS_long = data.frame(lihc_meta_combined_with_TLS_long)
 
@@ -561,7 +559,7 @@ pdf("./result/Fig5H_1.pdf",width = 15,height = 5)
 print(a1)
 dev.off()
 
-lihc_meta_combined_with_TLS_heatmap = lihc_meta_combined_with_TLS
+lihc_meta_combined_with_TLS_heatmap = lihc_meta_with_tls_df
 lihc_meta_combined_with_TLS_heatmap = data.frame(lihc_meta_combined_with_TLS_heatmap)
 lihc_meta_combined_with_TLS_heatmap$BCLC_stage = ifelse(lihc_meta_combined_with_TLS_heatmap$BCLC_stage == 'B',
                                                         'B/C',lihc_meta_combined_with_TLS_heatmap$BCLC_stage)
@@ -579,7 +577,7 @@ lihc_meta_combined_with_TLS_heatmap2 = lihc_meta_combined_with_TLS_heatmap[,-whi
 lihc_meta_combined_with_TLS_heatmap2 = lihc_meta_combined_with_TLS_heatmap2[,c('Sample.Description','BCLC_stage','Etiology_of_liver_disease','Patient_ID')]
 lihc_meta_combined_with_TLS_heatmap2 = t(lihc_meta_combined_with_TLS_heatmap2)
 
-colors = c(    "HBV+"     = "#18375e",
+annotation_color_map = c(    "HBV+"     = "#18375e",
                "HBV-"    = "#cfddef",
                "0/A"     = "#fad8d8",
                "B/C"    = "#771215",
@@ -595,8 +593,8 @@ colors = c(    "HBV+"     = "#18375e",
                "ICC-1"="#bcbe32",
                "HCC-5"="#d62a28")
 
-hmap2 <- Heatmap(lihc_meta_combined_with_TLS_heatmap2, 
-                 col = colors,
+metadata_heatmap <- Heatmap(lihc_meta_combined_with_TLS_heatmap2, 
+                 col = annotation_color_map,
                  na_col = 'grey60', 
                  rect_gp = grid::gpar(col = NA),
                  row_title = NULL, 
@@ -606,7 +604,7 @@ hmap2 <- Heatmap(lihc_meta_combined_with_TLS_heatmap2,
                  column_title = NULL)
 
 pdf("./result/Fig5H_2.pdf",width = 15,height = 10)
-draw(hmap2)
+draw(metadata_heatmap)
 dev.off()
 rm(list = ls())
 
@@ -625,7 +623,7 @@ LIHC_prop_table_melted$Var2 = factor(LIHC_prop_table_melted$Var2,
 LIHC_prop_table_melted$Var1 = factor(LIHC_prop_table_melted$Var1,
                                      levels = c('Secondary Mature','Primary Mature','Immature'),labels=c("S-TLS","P-TLS","E-TLS"))
 
-cols <- c(
+fill_color_map <- c(
   "Tumor_Boundary" = "#a97c50",
   "Non-tumor" = "#f8b636",
   "Tumor_region" = "#dca1a1"
@@ -636,7 +634,7 @@ a = ggplot(LIHC_prop_table_melted, aes(x = Var1, y = value, fill = Var2)) +
   geom_bar(position="stack", stat="identity") + 
   theme_classic() + 
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0))  + 
-  scale_fill_manual(values = cols ) + coord_flip()
+  scale_fill_manual(values = fill_color_map ) + coord_flip()
 
 pdf("./result/Fig5I.pdf")
 print(a)
@@ -677,34 +675,34 @@ tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
 lihc_meta = read_excel('./data_meta/ST_LIHC_cohort_meta.xlsx')
-lihc_meta$Stage = ifelse(lihc_meta$Stage %in% c("Ia","Ib"),'I',lihc_meta$Stage)
+
 lihc_meta = lihc_meta[,colnames(lihc_meta) %in% c('Patient_ID','Etiology_of_liver_disease','BCLC_stage')]
 
-lihc_meta_with_ST_ID2 = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
-lihc_meta_with_ST_ID2 = lihc_meta_with_ST_ID2[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
-lihc_meta_with_ST_ID2 = data.frame(lihc_meta_with_ST_ID2)
+lihc_st_sample_map_df = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
+lihc_st_sample_map_df = lihc_st_sample_map_df[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
+lihc_st_sample_map_df = data.frame(lihc_st_sample_map_df)
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% lihc_meta_with_ST_ID2$Sample_ID2,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% lihc_st_sample_map_df$Sample_ID2,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","ETLS","PTLS","STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","ETLS","PTLS","STLS")
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_with_ST_ID2,tls_classification3,by.x='Sample_ID2',by.y='Sample_ID')
-colnames(lihc_meta_combined_with_TLS)[1] = 'ST_ID'
+lihc_meta_with_tls_df = merge(lihc_st_sample_map_df,tls_counts_by_sample_df,by.x='Sample_ID2',by.y='Sample_ID')
+colnames(lihc_meta_with_tls_df)[1] = 'ST_ID'
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_combined_with_TLS,lihc_meta,by='Patient_ID',all=T)
+lihc_meta_with_tls_df = merge(lihc_meta_with_tls_df,lihc_meta,by='Patient_ID',all=T)
 
-lihc_meta_combined_with_TLS$ETLS = ifelse(is.na(lihc_meta_combined_with_TLS$ETLS),0,lihc_meta_combined_with_TLS$ETLS)
-lihc_meta_combined_with_TLS$PTLS = ifelse(is.na(lihc_meta_combined_with_TLS$PTLS),0,lihc_meta_combined_with_TLS$PTLS)
-lihc_meta_combined_with_TLS$STLS = ifelse(is.na(lihc_meta_combined_with_TLS$STLS),0,lihc_meta_combined_with_TLS$STLS)
+lihc_meta_with_tls_df$ETLS = ifelse(is.na(lihc_meta_with_tls_df$ETLS),0,lihc_meta_with_tls_df$ETLS)
+lihc_meta_with_tls_df$PTLS = ifelse(is.na(lihc_meta_with_tls_df$PTLS),0,lihc_meta_with_tls_df$PTLS)
+lihc_meta_with_tls_df$STLS = ifelse(is.na(lihc_meta_with_tls_df$STLS),0,lihc_meta_with_tls_df$STLS)
 
-lihc_meta_combined_with_TLS$Total_TLS = rowSums(lihc_meta_combined_with_TLS[,c('ETLS','PTLS','STLS')])
-lihc_meta_combined_with_TLS$ETLS_prop = lihc_meta_combined_with_TLS$ETLS / lihc_meta_combined_with_TLS$Total_TLS
-lihc_meta_combined_with_TLS$PTLS_prop = lihc_meta_combined_with_TLS$PTLS / lihc_meta_combined_with_TLS$Total_TLS
-lihc_meta_combined_with_TLS$STLS_prop = lihc_meta_combined_with_TLS$STLS / lihc_meta_combined_with_TLS$Total_TLS
+lihc_meta_with_tls_df$Total_TLS = rowSums(lihc_meta_with_tls_df[,c('ETLS','PTLS','STLS')])
+lihc_meta_with_tls_df$ETLS_prop = lihc_meta_with_tls_df$ETLS / lihc_meta_with_tls_df$Total_TLS
+lihc_meta_with_tls_df$PTLS_prop = lihc_meta_with_tls_df$PTLS / lihc_meta_with_tls_df$Total_TLS
+lihc_meta_with_tls_df$STLS_prop = lihc_meta_with_tls_df$STLS / lihc_meta_with_tls_df$Total_TLS
 
-lihc_HBV = lihc_meta_combined_with_TLS %>% group_by(Etiology_of_liver_disease) %>% summarise(across(c(ETLS_prop,PTLS_prop,STLS_prop),mean))
+lihc_HBV = lihc_meta_with_tls_df %>% group_by(Etiology_of_liver_disease) %>% summarise(across(c(ETLS_prop,PTLS_prop,STLS_prop),mean))
 lihc_HBV_long = lihc_HBV %>% pivot_longer(cols= c(ETLS_prop,PTLS_prop,STLS_prop),names_to = "TLS", values_to = "Prop")
 
 lihc_HBV_long$Etiology_of_liver_disease = factor(lihc_HBV_long$Etiology_of_liver_disease,levels = c("non-HBV","HBV"),labels=c("HBV-","HBV+"))
@@ -726,52 +724,52 @@ tls_classification = readRDS("./data/TLS_classification.rds")
 tls_classification$Sample_ID = sapply(strsplit(tls_classification$TLS_ID, "_"), function(x) paste(x[1]))
 
 lihc_meta = read_excel('./data_meta/ST_LIHC_cohort_meta.xlsx')
-lihc_meta$Stage = ifelse(lihc_meta$Stage %in% c("Ia","Ib"),'I',lihc_meta$Stage)
+
 lihc_meta = lihc_meta[,colnames(lihc_meta) %in% c('Patient_ID','Etiology_of_liver_disease','BCLC_stage')]
 
-lihc_meta_with_ST_ID2 = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
-lihc_meta_with_ST_ID2 = lihc_meta_with_ST_ID2[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
-lihc_meta_with_ST_ID2 = data.frame(lihc_meta_with_ST_ID2)
+lihc_st_sample_map_df = read_excel("./data_meta/ST_LIHC_cohort_meta2.xlsx")
+lihc_st_sample_map_df = lihc_st_sample_map_df[,c('Sample_ID','Patient_ID','Sample Description','Sample_ID2')]
+lihc_st_sample_map_df = data.frame(lihc_st_sample_map_df)
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% lihc_meta_with_ST_ID2$Sample_ID2,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% lihc_st_sample_map_df$Sample_ID2,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
-colnames(tls_classification3) = c("Sample_ID","ETLS","PTLS","STLS")
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
+colnames(tls_counts_by_sample_df) = c("Sample_ID","ETLS","PTLS","STLS")
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_with_ST_ID2,tls_classification3,by.x='Sample_ID2',by.y='Sample_ID')
-colnames(lihc_meta_combined_with_TLS)[1] = 'ST_ID'
+lihc_meta_with_tls_df = merge(lihc_st_sample_map_df,tls_counts_by_sample_df,by.x='Sample_ID2',by.y='Sample_ID')
+colnames(lihc_meta_with_tls_df)[1] = 'ST_ID'
 
-lihc_meta_combined_with_TLS = merge(lihc_meta_combined_with_TLS,lihc_meta,by='Patient_ID',all=T)
+lihc_meta_with_tls_df = merge(lihc_meta_with_tls_df,lihc_meta,by='Patient_ID',all=T)
 
-lihc_meta_combined_with_TLS$BCLC_stage = ifelse(lihc_meta_combined_with_TLS$BCLC_stage == 'B',
-                                                'B/C',lihc_meta_combined_with_TLS$BCLC_stage)
-lihc_meta_combined_with_TLS$BCLC_stage = ifelse(lihc_meta_combined_with_TLS$BCLC_stage == 'C',
-                                                'B/C',lihc_meta_combined_with_TLS$BCLC_stage)
-lihc_meta_combined_with_TLS$BCLC_stage = ifelse(lihc_meta_combined_with_TLS$BCLC_stage == '0',
-                                                '0/A',lihc_meta_combined_with_TLS$BCLC_stage)
-lihc_meta_combined_with_TLS$BCLC_stage = ifelse(lihc_meta_combined_with_TLS$BCLC_stage == 'A',
-                                                '0/A',lihc_meta_combined_with_TLS$BCLC_stage)
+lihc_meta_with_tls_df$BCLC_stage = ifelse(lihc_meta_with_tls_df$BCLC_stage == 'B',
+                                                'B/C',lihc_meta_with_tls_df$BCLC_stage)
+lihc_meta_with_tls_df$BCLC_stage = ifelse(lihc_meta_with_tls_df$BCLC_stage == 'C',
+                                                'B/C',lihc_meta_with_tls_df$BCLC_stage)
+lihc_meta_with_tls_df$BCLC_stage = ifelse(lihc_meta_with_tls_df$BCLC_stage == '0',
+                                                '0/A',lihc_meta_with_tls_df$BCLC_stage)
+lihc_meta_with_tls_df$BCLC_stage = ifelse(lihc_meta_with_tls_df$BCLC_stage == 'A',
+                                                '0/A',lihc_meta_with_tls_df$BCLC_stage)
 
-lihc_meta_combined_with_TLS$ETLS = ifelse(is.na(lihc_meta_combined_with_TLS$ETLS),0,lihc_meta_combined_with_TLS$ETLS)
-lihc_meta_combined_with_TLS$PTLS = ifelse(is.na(lihc_meta_combined_with_TLS$PTLS),0,lihc_meta_combined_with_TLS$PTLS)
-lihc_meta_combined_with_TLS$STLS = ifelse(is.na(lihc_meta_combined_with_TLS$STLS),0,lihc_meta_combined_with_TLS$STLS)
+lihc_meta_with_tls_df$ETLS = ifelse(is.na(lihc_meta_with_tls_df$ETLS),0,lihc_meta_with_tls_df$ETLS)
+lihc_meta_with_tls_df$PTLS = ifelse(is.na(lihc_meta_with_tls_df$PTLS),0,lihc_meta_with_tls_df$PTLS)
+lihc_meta_with_tls_df$STLS = ifelse(is.na(lihc_meta_with_tls_df$STLS),0,lihc_meta_with_tls_df$STLS)
 
 
-lihc_meta_combined_with_TLS$TLS_class = ifelse(rowSums(lihc_meta_combined_with_TLS[,c('ETLS','PTLS','STLS')]) == 0,"No_TLS",
-                                               apply(lihc_meta_combined_with_TLS[, c('ETLS', 'PTLS', 'STLS')], 1, function(x) {
+lihc_meta_with_tls_df$TLS_class = ifelse(rowSums(lihc_meta_with_tls_df[,c('ETLS','PTLS','STLS')]) == 0,"No_TLS",
+                                               apply(lihc_meta_with_tls_df[, c('ETLS', 'PTLS', 'STLS')], 1, function(x) {
                                                  categories <- c('ETLS', 'PTLS', 'STLS')
                                                  categories[which.max(x)]
                                                }))
 
-lihc_meta_combined_with_TLS$TLS_class = ifelse(lihc_meta_combined_with_TLS$TLS_class == 'ETLS','E-TLS',
-                                               ifelse(lihc_meta_combined_with_TLS$TLS_class == 'PTLS','P-TLS',
+lihc_meta_with_tls_df$TLS_class = ifelse(lihc_meta_with_tls_df$TLS_class == 'ETLS','E-TLS',
+                                               ifelse(lihc_meta_with_tls_df$TLS_class == 'PTLS','P-TLS',
                                                       'S-TLS'))
 
-lihc_meta_combined_with_TLS$Etiology_of_liver_disease = factor(lihc_meta_combined_with_TLS$Etiology_of_liver_disease,
+lihc_meta_with_tls_df$Etiology_of_liver_disease = factor(lihc_meta_with_tls_df$Etiology_of_liver_disease,
                                                                levels=c('HBV','non-HBV'),labels=c('HBV+','HBV-'))
 
-p <- ggplot(lihc_meta_combined_with_TLS,
+p <- ggplot(lihc_meta_with_tls_df,
             aes(axis1 = TLS_class, axis2 = Etiology_of_liver_disease, y = 1)) +
   geom_alluvium(aes(fill = TLS_class), width = 1/6) +
   geom_stratum(aes(fill = after_stat(stratum)), width = 1/6) +
@@ -792,7 +790,7 @@ pdf("./result/Fig5L_1.pdf")
 print(p)
 dev.off()
 
-p <- ggplot(lihc_meta_combined_with_TLS,
+p <- ggplot(lihc_meta_with_tls_df,
             aes(axis1 = TLS_class, axis2 = BCLC_stage, y = 1)) +
   geom_alluvium(aes(fill = TLS_class), width = 1/6) +
   geom_stratum(aes(fill = after_stat(stratum)), width = 1/6) +
@@ -822,31 +820,31 @@ bladder_sample_info = read_excel("./data_meta/ST_BLCA_cohort_meta.xlsx")
 bladder_sample_info$`cStage(pre)` <- substr(bladder_sample_info$`cStage(pre)`, 1, 3)
 bladder_sample_info$MTAP = ifelse(bladder_sample_info$MTAP == "P","Pos","Neg")
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% bladder_sample_info$Sample_ID,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% bladder_sample_info$Sample_ID,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
 
-colnames(tls_classification3) = c("Sample_ID","ETLS","PTLS")
+colnames(tls_counts_by_sample_df) = c("Sample_ID","ETLS","PTLS")
 
-blca_meta_combined_with_TLS = merge(bladder_sample_info,tls_classification3,by.x = 'Sample_ID',by.y = 'Sample_ID',all=T)
-colnames(blca_meta_combined_with_TLS)[1] = 'ST_ID'
+blca_meta_with_tls_df = merge(bladder_sample_info,tls_counts_by_sample_df,by.x = 'Sample_ID',by.y = 'Sample_ID',all=T)
+colnames(blca_meta_with_tls_df)[1] = 'ST_ID'
 
-blca_meta_combined_with_TLS$ETLS = ifelse(is.na(blca_meta_combined_with_TLS$ETLS),0,blca_meta_combined_with_TLS$ETLS)
-blca_meta_combined_with_TLS$PTLS = ifelse(is.na(blca_meta_combined_with_TLS$PTLS),0,blca_meta_combined_with_TLS$PTLS)
+blca_meta_with_tls_df$ETLS = ifelse(is.na(blca_meta_with_tls_df$ETLS),0,blca_meta_with_tls_df$ETLS)
+blca_meta_with_tls_df$PTLS = ifelse(is.na(blca_meta_with_tls_df$PTLS),0,blca_meta_with_tls_df$PTLS)
 
-blca_meta_combined_with_TLS$Total_counts = rowSums(blca_meta_combined_with_TLS[,c("ETLS", "PTLS")])
-blca_meta_combined_with_TLS = blca_meta_combined_with_TLS %>% arrange(MTAP,desc(Total_counts),ST_ID)
+blca_meta_with_tls_df$Total_counts = rowSums(blca_meta_with_tls_df[,c("ETLS", "PTLS")])
+blca_meta_with_tls_df = blca_meta_with_tls_df %>% arrange(MTAP,desc(Total_counts),ST_ID)
 
-blca_meta_combined_with_TLS$Responder = factor(blca_meta_combined_with_TLS$Responder,levels=c("N","Y"),labels=c("NR","R"))
-blca_meta_combined_with_TLS$MTAP =  factor(blca_meta_combined_with_TLS$MTAP,levels = c("Neg","Pos"),labels=c("MTAP-","MTAP+"))
+blca_meta_with_tls_df$Responder = factor(blca_meta_with_tls_df$Responder,levels=c("N","Y"),labels=c("NR","R"))
+blca_meta_with_tls_df$MTAP =  factor(blca_meta_with_tls_df$MTAP,levels = c("Neg","Pos"),labels=c("MTAP-","MTAP+"))
 
 order_vec <- c("MTAP+", "MTAP-")
 
-blca_meta_combined_with_TLS = blca_meta_combined_with_TLS %>% 
+blca_meta_with_tls_df = blca_meta_with_tls_df %>% 
   arrange(match(MTAP, order_vec),desc(Total_counts),ST_ID)
 
-blca_meta_combined_with_TLS_long = blca_meta_combined_with_TLS %>% 
+blca_meta_combined_with_TLS_long = blca_meta_with_tls_df %>% 
   pivot_longer(cols = c(ETLS,PTLS),names_to = "TLS", values_to = "TLS_Count")
 
 blca_meta_combined_with_TLS_long = data.frame(blca_meta_combined_with_TLS_long)
@@ -863,13 +861,13 @@ pdf("./result/Fig5N_1.pdf",width = 15,height = 5)
 print(a1)
 dev.off()
 
-blca_meta_combined_with_TLS_heatmap = blca_meta_combined_with_TLS
+blca_meta_combined_with_TLS_heatmap = blca_meta_with_tls_df
 blca_meta_combined_with_TLS_heatmap = data.frame(blca_meta_combined_with_TLS_heatmap)
 rownames(blca_meta_combined_with_TLS_heatmap) = blca_meta_combined_with_TLS_heatmap$ST_ID
 blca_meta_combined_with_TLS_heatmap2 = blca_meta_combined_with_TLS_heatmap[,-which(colnames(blca_meta_combined_with_TLS_heatmap) %in% c('ST_ID',"ETLS","PTLS","Total_counts"))]
 blca_meta_combined_with_TLS_heatmap2 = blca_meta_combined_with_TLS_heatmap2[,c("MTAP","Responder","cStage.pre.")]
 blca_meta_combined_with_TLS_heatmap2 = t(blca_meta_combined_with_TLS_heatmap2)
-colors = c( "MTAP+"= "#17365e",
+annotation_color_map = c( "MTAP+"= "#17365e",
             "MTAP-"= "#cfdff2",
             "NR"   = "#e0f0e1",
             "R"    = "#0f8c44",
@@ -877,8 +875,8 @@ colors = c( "MTAP+"= "#17365e",
             "cT3"  = "#DE6464",
             "cT4"  = "#780606")
 
-hmap2 <- Heatmap(blca_meta_combined_with_TLS_heatmap2, 
-                 col = colors,
+metadata_heatmap <- Heatmap(blca_meta_combined_with_TLS_heatmap2, 
+                 col = annotation_color_map,
                  na_col = 'grey60', 
                  rect_gp = grid::gpar(col = NA),
                  row_title = NULL, 
@@ -888,7 +886,7 @@ hmap2 <- Heatmap(blca_meta_combined_with_TLS_heatmap2,
                  column_title = NULL)
 
 pdf("./result/Fig5N_2.pdf",width = 15,height = 10)
-draw(hmap2)
+draw(metadata_heatmap)
 dev.off()
 rm(list = ls())
 
@@ -907,7 +905,7 @@ BLCA_prop_table_melted <- melt(BLCA_prop_table)
 BLCA_prop_table_melted$Var1 = factor(BLCA_prop_table_melted$Var1,
                                      levels = c('Primary Mature','Immature'),labels=c("P-TLS","E-TLS"))
 
-cols <- c(
+fill_color_map <- c(
   "Stroma" = "#fdfbd4",
   "Tumor" = "#b22222"
 )
@@ -917,7 +915,7 @@ c = ggplot(BLCA_prop_table_melted, aes(x = Var1, y = value, fill = Var2)) +
   geom_bar(position="stack", stat="identity") + 
   theme_classic() + 
   scale_y_continuous(limits = c(0, 1), expand = c(0, 0))  + 
-  scale_fill_manual(values = cols) + coord_flip()
+  scale_fill_manual(values = fill_color_map) + coord_flip()
 
 pdf("./result/Fig5O.pdf")
 print(c)
@@ -959,21 +957,21 @@ bladder_sample_info = read_excel("./data_meta/ST_BLCA_cohort_meta.xlsx")
 bladder_sample_info$`cStage(pre)` <- substr(bladder_sample_info$`cStage(pre)`, 1, 3)
 bladder_sample_info$MTAP = ifelse(bladder_sample_info$MTAP == "P","Pos","Neg")
 
-tls_classification2 = tls_classification[tls_classification$Sample_ID %in% bladder_sample_info$Sample_ID,]
+tls_classification_filtered = tls_classification[tls_classification$Sample_ID %in% bladder_sample_info$Sample_ID,]
 
-tls_classification3 = tls_classification2 %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
-tls_classification3 = data.frame(tls_classification3)
+tls_counts_by_sample_df = tls_classification_filtered %>% group_by(Sample_ID,Cluster) %>% summarise(count = n()) %>% pivot_wider(names_from = Cluster, values_from = count, values_fill = 0)
+tls_counts_by_sample_df = data.frame(tls_counts_by_sample_df)
 
-colnames(tls_classification3) = c("Sample_ID","E-TLS","P-TLS")
+colnames(tls_counts_by_sample_df) = c("Sample_ID","E-TLS","P-TLS")
 
-blca_meta_combined_with_TLS = merge(bladder_sample_info,tls_classification3,by.x = 'Sample_ID',by.y = 'Sample_ID',all=T)
-colnames(blca_meta_combined_with_TLS)[1] = 'ST_ID'
+blca_meta_with_tls_df = merge(bladder_sample_info,tls_counts_by_sample_df,by.x = 'Sample_ID',by.y = 'Sample_ID',all=T)
+colnames(blca_meta_with_tls_df)[1] = 'ST_ID'
 
-blca_meta_combined_with_TLS$'E-TLS' = ifelse(is.na(blca_meta_combined_with_TLS$'E-TLS'),0,blca_meta_combined_with_TLS$'E-TLS')
-blca_meta_combined_with_TLS$'P-TLS' = ifelse(is.na(blca_meta_combined_with_TLS$'P-TLS'),0,blca_meta_combined_with_TLS$'P-TLS')
+blca_meta_with_tls_df$'E-TLS' = ifelse(is.na(blca_meta_with_tls_df$'E-TLS'),0,blca_meta_with_tls_df$'E-TLS')
+blca_meta_with_tls_df$'P-TLS' = ifelse(is.na(blca_meta_with_tls_df$'P-TLS'),0,blca_meta_with_tls_df$'P-TLS')
 
-blca_meta_combined_with_TLS$TLS_class <- ifelse(rowSums(blca_meta_combined_with_TLS[,c('E-TLS','P-TLS')]) == 0,"No_TLS",
-                                                apply(blca_meta_combined_with_TLS[, c('E-TLS', 'P-TLS')], 1, function(x) {
+blca_meta_with_tls_df$TLS_class <- ifelse(rowSums(blca_meta_with_tls_df[,c('E-TLS','P-TLS')]) == 0,"No_TLS",
+                                                apply(blca_meta_with_tls_df[, c('E-TLS', 'P-TLS')], 1, function(x) {
                                                   categories <- c('E-TLS', 'P-TLS', 'Secondary')
                                                   max_value <- max(x)
                                                   max_indices <- which(x == max_value)
@@ -985,12 +983,12 @@ blca_meta_combined_with_TLS$TLS_class <- ifelse(rowSums(blca_meta_combined_with_
                                                   }
                                                 }))
 
-blca_meta_combined_with_TLS$TLS_class = factor(blca_meta_combined_with_TLS$TLS_class,levels = c("No_TLS","E-TLS","P-TLS"))
+blca_meta_with_tls_df$TLS_class = factor(blca_meta_with_tls_df$TLS_class,levels = c("No_TLS","E-TLS","P-TLS"))
 
-blca_meta_combined_with_TLS$Responder = factor(blca_meta_combined_with_TLS$Responder,levels=c("N","Y"),labels=c("NR","R"))
-blca_meta_combined_with_TLS$MTAP =  factor(blca_meta_combined_with_TLS$MTAP,levels = c("Neg","Pos"),labels=c("MTAP-","MTAP+"))
+blca_meta_with_tls_df$Responder = factor(blca_meta_with_tls_df$Responder,levels=c("N","Y"),labels=c("NR","R"))
+blca_meta_with_tls_df$MTAP =  factor(blca_meta_with_tls_df$MTAP,levels = c("Neg","Pos"),labels=c("MTAP-","MTAP+"))
 
-p = ggplot(blca_meta_combined_with_TLS, aes_string(axis1 = 'TLS_class', axis2 = "MTAP", fill = 'TLS_class')) +
+p = ggplot(blca_meta_with_tls_df, aes_string(axis1 = 'TLS_class', axis2 = "MTAP", fill = 'TLS_class')) +
   geom_alluvium(aes(fill = TLS_class), width = 1/6) +
   geom_stratum(aes(fill = after_stat(stratum)), width = 1/6) +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
@@ -1010,7 +1008,7 @@ print(p)
 dev.off()
 
 
-p = ggplot(blca_meta_combined_with_TLS, aes_string(axis1 = 'TLS_class', axis2 = "Responder", fill = 'TLS_class')) +
+p = ggplot(blca_meta_with_tls_df, aes_string(axis1 = 'TLS_class', axis2 = "Responder", fill = 'TLS_class')) +
   geom_alluvium(aes(fill = TLS_class), width = 1/6) +
   geom_stratum(aes(fill = after_stat(stratum)), width = 1/6) +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +

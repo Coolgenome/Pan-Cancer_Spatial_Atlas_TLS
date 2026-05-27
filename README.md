@@ -36,5 +36,10 @@ This repository includes the codes used for generating the main results presente
 > - Marker scoring and phenotype inference to generate TLS-related embedding outputs.  
 > - TLS clustering, segmentation, and extraction of TLS-level summary outputs.
 
+`Fig6.sh` covers the following analysis workflow:  
+> - TLS detection from H&E slides.  
+> - TLS maturation classification.
+
 For any questions, please leave your comment in GitHub or contact Kevin Cho (kcho2@mdanderson.org). We will help address the issues as soon as possible.
+
 

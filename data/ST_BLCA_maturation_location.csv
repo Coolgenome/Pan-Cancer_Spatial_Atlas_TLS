@@ -1,0 +1,17 @@
+ST_ID,sample_key,TLS_ID,Cluster,Location
+BL3,S-04-021004,BL3_2,Primary Mature,Stroma
+BL3,S-04-021004,BL3_6,Primary Mature,Stroma
+BL3,S-04-021004,BL3_7,Primary Mature,Stroma
+BL3,S-04-021004,BL3_8,Immature,Stroma
+BL3,S-04-021004,BL3_9,Primary Mature,Stroma
+BL4,S-11-022505,BL4_12,Primary Mature,Stroma
+BL4,S-11-022505,BL4_13,Immature,Stroma
+BL5,S-06-021078,BL5_1,Immature,Tumor
+BL5,S-06-021078,BL5_3,Immature,Tumor
+BL6,S-11-041306,BL6_4,Primary Mature,Stroma
+BL6,S-11-041306,BL6_7,Primary Mature,Stroma
+BL6,S-11-041306,BL6_8,Primary Mature,Stroma
+BL7,S-11-048186,BL7_4,Primary Mature,Stroma
+BL8,S-12-077182,BL8_1,Immature,Stroma
+BL9,S-12-079335,BL9_4,Immature,Tumor
+BL10,S-15-010400,BL10_37,Immature,Tumor

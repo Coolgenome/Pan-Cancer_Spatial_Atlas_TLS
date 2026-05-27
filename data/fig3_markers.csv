@@ -1,0 +1,271 @@
+gene,celltype,Major_type
+CD74,Antigen presentation,CAF_Macrophage_DC
+HLA.DPB,Antigen presentation,CAF_Macrophage_DC
+HLA.DPB1,Antigen presentation,CAF_Macrophage_DC
+HLA.DQA1,Antigen presentation,CAF_Macrophage_DC
+HLA.DRA,Antigen presentation,CAF_Macrophage_DC
+HLA.DRB1,Antigen presentation,CAF_Macrophage_DC
+CD19,B,B
+CD22,B,B
+CD79A,B,B
+CD79B,B,B
+LTB,B,B
+MS4A1,B,B
+TNFRSF13C,B,B
+TGFB1,Breg,B
+IL10,Breg,B
+CD1D,Breg,B
+CD24,Breg,B
+CD5,Breg,B
+HAVCR1,Breg,B
+TIM1,Breg,B
+COL1A1,Fibroblast,CAF_Macrophage_DC
+COL1A2,Fibroblast,CAF_Macrophage_DC
+COL2A1,Fibroblast,CAF_Macrophage_DC
+COL3A1,Fibroblast,CAF_Macrophage_DC
+COL6A1,Fibroblast,CAF_Macrophage_DC
+COL6A2,Fibroblast,CAF_Macrophage_DC
+CCL18,Cytokines and Chemokines,Others
+CCL19,Cytokines and Chemokines,Others
+CCL2,Cytokines and Chemokines,Others
+CCL20,Cytokines and Chemokines,Others
+CCL21,Cytokines and Chemokines,Others
+CCL25,Cytokines and Chemokines,Others
+CCL3,Cytokines and Chemokines,Others
+CCL4,Cytokines and Chemokines,Others
+CCL5,Cytokines and Chemokines,Others
+CCL8,Cytokines and Chemokines,Others
+CCR7,Cytokines and Chemokines,Others
+CX3CL1,Cytokines and Chemokines,Others
+CX3CR1,Cytokines and Chemokines,Others
+CXCL10,Cytokines and Chemokines,Others
+CXCL11,Cytokines and Chemokines,Others
+CXCL12,Cytokines and Chemokines,Others
+CXCL13,Cytokines and Chemokines,Others
+CXCL16,Cytokines and Chemokines,Others
+CXCL3,Cytokines and Chemokines,Others
+CXCL9,Cytokines and Chemokines,Others
+CXCR4,Cytokines and Chemokines,Others
+CXCR5,Cytokines and Chemokines,Others
+IL10,Cytokines and Chemokines,Others
+IL11,Cytokines and Chemokines,Others
+IL12A,Cytokines and Chemokines,Others
+IL13,Cytokines and Chemokines,Others
+IL15,Cytokines and Chemokines,Others
+IL17A,Cytokines and Chemokines,Others
+IL1B,Cytokines and Chemokines,Others
+IL1RL2,Cytokines and Chemokines,Others
+IL2,Cytokines and Chemokines,Others
+IL21,Cytokines and Chemokines,Others
+IL22,Cytokines and Chemokines,Others
+IL23,Cytokines and Chemokines,Others
+IL23R,Cytokines and Chemokines,Others
+IL27,Cytokines and Chemokines,Others
+IL2RA,Cytokines and Chemokines,Others
+IL33,Cytokines and Chemokines,Others
+IL4,Cytokines and Chemokines,Others
+IL6,Cytokines and Chemokines,Others
+IL7,Cytokines and Chemokines,Others
+OSM,Cytokines and Chemokines,Others
+CXCL14,Cytokines and Chemokines,Others
+CD83,DC,CAF_Macrophage_DC
+CD1C,DC,CAF_Macrophage_DC
+CD80,DC,CAF_Macrophage_DC
+CD86,DC,CAF_Macrophage_DC
+CLEC9A,DC,CAF_Macrophage_DC
+CSF2,DC,CAF_Macrophage_DC
+IFNA1,DC,CAF_Macrophage_DC
+IRF7,DC,CAF_Macrophage_DC
+ITGAX,DC,CAF_Macrophage_DC
+LAMP3,DC,CAF_Macrophage_DC
+LILRA4,DC,CAF_Macrophage_DC
+CTLA4,T cell exhaustion,T
+CXCR6,T cell exhaustion,T
+DUSP4,T cell exhaustion,T
+HAVCR2,T cell exhaustion,T
+IFNG,T cell exhaustion,T
+LAG3,T cell exhaustion,T
+LAYN,T cell exhaustion,T
+PDCD1,T cell exhaustion,T
+PHLDA1,T cell exhaustion,T
+TIGIT,T cell exhaustion,T
+CR2,FDC,T
+FCER2,FDC,T
+TNFSF13B,FDC,T
+VCAM1,CAF,CAF_Macrophage_DC
+FAP,CAF,CAF_Macrophage_DC
+ICAM1,CAF,CAF_Macrophage_DC
+PDGFRA,CAF,CAF_Macrophage_DC
+PDPN,CAF,CAF_Macrophage_DC
+TNFSF11,CAF,CAF_Macrophage_DC
+AICDA,GCB,B
+BCL6,GCB,B
+IRF8,GCB,B
+LMO2,GCB,B
+SUGCT,GCB,B
+APOE,Macrophage,CAF_Macrophage_DC
+C1QA,Macrophage,CAF_Macrophage_DC
+CD163,Macrophage,CAF_Macrophage_DC
+CD68,Macrophage,CAF_Macrophage_DC
+IL1RN,Macrophage,CAF_Macrophage_DC
+LTA,Macrophage,CAF_Macrophage_DC
+MARCO,Macrophage,CAF_Macrophage_DC
+MRC1,Macrophage,CAF_Macrophage_DC
+NLRP3,Macrophage,CAF_Macrophage_DC
+SIGLEC1,Macrophage,CAF_Macrophage_DC
+TNF,Macrophage,CAF_Macrophage_DC
+BANK1,Bm,B
+CCR6,Bm,B
+CD27,Bm,B
+CD40,Bm,B
+CRIP2,Bm,B
+ITGB1,Bm,B
+ACTA2,myCAF,CAF_Macrophage_DC
+TAGLN,myCAF,CAF_Macrophage_DC
+TGFB1,myCAF,CAF_Macrophage_DC
+FCRL1,Bn,B
+IGHD,Bn,B
+IGHM,Bn,B
+PAX5,Bn,B
+TCL1A,Bn,B
+CD38,PC,B
+IGHA1,PC,B
+IGHG1,PC,B
+JCHAIN,PC,B
+MZB1,PC,B
+PRDM1,PC,B
+SDC1,PC,B
+TNFRSF17,PC,B
+XBP1,PC,B
+BIRC5,Proliferation,Others
+MKI67,Proliferation,Others
+SLBP,Proliferation,Others
+STMN1,Proliferation,Others
+TUBB,Proliferation,Others
+BAG3,Stress response,T
+DNAJA1,Stress response,T
+DNAJA4,Stress response,T
+DNAJB1,Stress response,T
+DNAJB4,Stress response,T
+DUSP1,Stress response,T
+FOS,Stress response,T
+FOSB,Stress response,T
+HSP90AA1,Stress response,T
+HSP90AB1,Stress response,T
+HSPA1A,Stress response,T
+HSPA1B,Stress response,T
+HSPA6,Stress response,T
+HSPA8,Stress response,T
+HSPB1,Stress response,T
+HSPD1,Stress response,T
+HSPE1,Stress response,T
+HSPH1,Stress response,T
+JUN,Stress response,T
+NR4A1,Stress response,T
+CD3D,T,T
+CD3E,T,T
+CD4,T,T
+CD40LG,T,T
+CD8A,T,T
+CD8B,T,T
+IL7R,T,T
+ITGAE,T,T
+ANXA1,Tcm,T
+CD69,Tcm,T
+GPR183,Tcm,T
+IL7R,Tcm,T
+JUND,Tcm,T
+KLRB1,Tcm,T
+LMNA,Tcm,T
+TRBC1,TCR signaling,CAF_Macrophage_DC
+TRBC2,TCR signaling,CAF_Macrophage_DC
+CD244,Teff,T
+CD300A,Teff,T
+EOMES,Teff,T
+FCGR3A,Teff,T
+FGFBP2,Teff,T
+GNLY,Teff,T
+GZMA,Teff,T
+GZMB,Teff,T
+GZMH,Teff,T
+GZMK,Teff,T
+GZMM,Teff,T
+HOPX,Teff,T
+KLRD1,Teff,T
+KLRG1,Teff,T
+NKG7,Teff,T
+PLEK,Teff,T
+PRF1,Teff,T
+SEMA4A,Teff,T
+TBX21,Teff,T
+TNFRSF9,Teff,T
+ZEB2,Teff,T
+BTLA,Tfh,T
+CD200,Tfh,T
+CHI3L2,Tfh,T
+GNG4,Tfh,T
+NMB,Tfh,T
+NR3C1,Tfh,T
+PDCD1,Tfh,T
+SH2D1A,Tfh,T
+SMCO4,Tfh,T
+TOX,Tfh,T
+TOX2,Tfh,T
+RORC,Th17,T
+STAT3,Th17,T
+EIF2AK2,Interferon response,T
+EPSTI1,Interferon response,T
+HERC5,Interferon response,T
+IFI27,Interferon response,T
+IFI44,Interferon response,T
+IFI44L,Interferon response,T
+IFI6,Interferon response,T
+IFIT1,Interferon response,T
+IFIT2,Interferon response,T
+IFIT3,Interferon response,T
+ISG15,Interferon response,T
+LY6E,Interferon response,T
+MX1,Interferon response,T
+MX2,Interferon response,T
+OAS1,Interferon response,T
+OAS3,Interferon response,T
+RSAD2,Interferon response,T
+SAMD9L,Interferon response,T
+STAT1,Interferon response,T
+XAF1,Interferon response,T
+FHIT,Tn,T
+KLF2,Tn,T
+LEF1,Tn,T
+SELL,Tn,T
+TCF7,Tn,T
+BATF,Treg,T
+CTLA4,Treg,T
+ENTPD1,Treg,T
+FOXP3,Treg,T
+GBP2,Treg,T
+GBP5,Treg,T
+IKZF2,Treg,T
+IL1R2,Treg,T
+IL2RB,Treg,T
+LAYN,Treg,T
+RTKN2,Treg,T
+TIGIT,Treg,T
+CD28,Treg,T
+TNFRSF18,Treg,T
+TNFRSF1B,Treg,T
+TNFRSF4,Treg,T
+SELL,Tcm,T
+CD27,Tcm,T
+ICOS,Tfh,T
+BCL6,Tfh,T
+TXNDC5,Endothelial,CAF_Macrophage_DC
+PECAM1,Endothelial,CAF_Macrophage_DC
+KDR,Endothelial,CAF_Macrophage_DC
+VEGFA,Endothelial,CAF_Macrophage_DC
+ICAM1,Endothelial,CAF_Macrophage_DC
+VCAM1,Endothelial,CAF_Macrophage_DC
+VWF,Endothelial,CAF_Macrophage_DC
+LYVE1,Endothelial,CAF_Macrophage_DC
+CD34,Endothelial,CAF_Macrophage_DC
+GLYCAM1,Endothelial,CAF_Macrophage_DC
+PODXL,Endothelial,CAF_Macrophage_DC

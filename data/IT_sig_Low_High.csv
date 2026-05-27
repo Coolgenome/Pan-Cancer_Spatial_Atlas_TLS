@@ -1,0 +1,11 @@
+X,overlap_cancer_type_cnt,overlap_cancer_types
+HALLMARK_E2F_TARGETS,4,"Bladder, Gastric, Liver, Lung"
+HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,4,"ccRCC, Colorectal, Lung, Ovarian"
+HALLMARK_NOTCH_SIGNALING,4,"Bladder, Breast, Colorectal, Liver"
+HALLMARK_WNT_BETA_CATENIN_SIGNALING,4,"ccRCC, Gastric, Liver, Lung"
+MP1..Cell.Cycle...G2.M,4,"Breast, Gastric, Liver, Lung"
+MP20.MYC,4,"Bladder, Breast, Liver, Lung"
+MP30.PDAC.classical,4,"Breast, Gastric, Liver, Ovarian"
+HALLMARK_MYOGENESIS,4,"ccRCC, Colorectal, Lung, Ovarian"
+HALLMARK_XENOBIOTIC_METABOLISM,4,"Breast, Colorectal, Gastric, Ovarian"
+Mesenchymal,4,"ccRCC, Colorectal, Lung, Ovarian"

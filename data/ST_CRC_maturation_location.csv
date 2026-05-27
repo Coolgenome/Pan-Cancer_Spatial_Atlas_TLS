@@ -1,0 +1,45 @@
+ST_ID,sample_key,TLS_ID,Cluster,Location
+CO20,6723_2_WD86056,CO20_21,Primary Mature,Carcinoma
+CO20,6723_2_WD86056,CO20_23,Primary Mature,Carcinoma
+CO20,6723_2_WD86056,CO20_28,Primary Mature,Carcinoma
+CO20,6723_2_WD86056,CO20_31,Primary Mature,Carcinoma
+CO22,6723_4_WD86055,CO22_18,Immature,Adenoma
+CO22,6723_4_WD86055,CO22_30,Primary Mature,Adenoma
+CO26,7003_4_WD85806,CO26_11,Primary Mature,Smooth muscle
+CO26,7003_4_WD85806,CO26_13,Immature,Smooth muscle
+CO26,7003_4_WD85806,CO26_15,Primary Mature,Smooth muscle
+CO26,7003_4_WD85806,CO26_16,Primary Mature,Smooth muscle
+CO26,7003_4_WD85806,CO26_17,Primary Mature,Smooth muscle
+CO27,7003_5_WD87480,CO27_3,Primary Mature,Smooth muscle
+CO30,7003_8_WD87482,CO30_1,Primary Mature,Smooth muscle
+CO30,7003_8_WD87482,CO30_3,Immature,Smooth muscle
+CO30,7003_8_WD87482,CO30_4,Secondary Mature,Carcinoma
+CO30,7003_8_WD87482,CO30_19,Secondary Mature,Carcinoma
+CO30,7003_8_WD87482,CO30_20,Secondary Mature,Carcinoma
+CO31,7319_2_HTA11_08622_A,CO31_2,Primary Mature,Adenoma
+CO31,7319_2_HTA11_08622_A,CO31_4,Immature,Adenoma
+CO31,7319_2_HTA11_08622_A,CO31_5,Immature,Adenoma
+CO31,7319_2_HTA11_08622_A,CO31_9,Primary Mature,Adenoma
+CO38,8270_12_WD84216,CO38_8,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_11,Primary Mature,Smooth muscle
+CO38,8270_12_WD84216,CO38_50,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_54,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_56,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_58,Primary Mature,Smooth muscle
+CO38,8270_12_WD84216,CO38_59,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_61,Immature,Smooth muscle
+CO38,8270_12_WD84216,CO38_64,Primary Mature,Smooth muscle
+CO38,8270_12_WD84216,CO38_74,Immature,Smooth muscle
+CO39,8270_2_HTA11_10711,CO39_1,Immature,Smooth muscle
+CO39,8270_2_HTA11_10711,CO39_3,Primary Mature,Normal mucosa
+CO44,8270_8_WD84596,CO44_9,Primary Mature,Smooth muscle
+CO44,8270_8_WD84596,CO44_26,Primary Mature,Smooth muscle
+CO51,8899_5_SG00003,CO51_12,Immature,Smooth muscle
+CO51,8899_5_SG00003,CO51_13,Primary Mature,Smooth muscle
+CO51,8899_5_SG00003,CO51_29,Immature,Smooth muscle
+CO52,8899_6_SG00003,CO52_1,Immature,Smooth muscle
+CO52,8899_6_SG00003,CO52_2,Immature,Smooth muscle
+CO52,8899_6_SG00003,CO52_9,Primary Mature,Smooth muscle
+CO52,8899_6_SG00003,CO52_27,Primary Mature,Smooth muscle
+CO53,8899_7_SG00004,CO53_29,Secondary Mature,Carcinoma
+CO53,8899_7_SG00004,CO53_30,Secondary Mature,Carcinoma

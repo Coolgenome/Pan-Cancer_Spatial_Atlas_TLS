@@ -1,0 +1,5 @@
+X,overlap_cancer_type_cnt,overlap_cancer_types
+CXCL16,5,"Bladder, Breast, Gastric, Liver, Lung"
+TNFRSF14,5,"Bladder, Breast, ccRCC, Liver, Lung"
+CXCL10,4,"Breast, Gastric, Liver, Lung"
+CXCL11,5,"Breast, ccRCC, Colorectal, Gastric, Lung"

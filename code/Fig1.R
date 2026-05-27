@@ -2,12 +2,8 @@
 ### The codes are separated by Figures ###
 
 ### load packages ###
-library(gtools)
-library(stringr)
 library(ggplot2)
 library(RColorBrewer)
-library(ComplexHeatmap)
-library(png)
 library(dplyr)
 library(tidyr)
 
@@ -48,24 +44,24 @@ TLS_samples$type = factor(TLS_samples$type, levels = c("Without TLS","With TLS")
 TLS_samples$cancer_type <- factor(TLS_samples$cancer_type, levels = rev(TLS_samples$cancer_type[1:12]))
 TLS_samples$prop = as.numeric(TLS_samples$prop)
 
-a = ggplot(TLS_samples,aes(x=cancer_type,y=prop,fill=type))+geom_bar(stat='identity')+
+p1 = ggplot(TLS_samples,aes(x=cancer_type,y=prop,fill=type))+geom_bar(stat='identity')+
   scale_fill_manual(values=c( "yellow3","green4"))+theme_classic() +
   scale_y_continuous(limits = c(0, 1.01), expand = c(0,0)) +
   coord_flip()
 
 pdf("./result/Fig1C_1.pdf",width=5,height=5)
-print(a)
+print(p1)
 dev.off()
 
 summary_data$total_counts = as.numeric(summary_data$total_counts)
 summary_data2 = summary_data
 summary_data2$cancer_type = factor(summary_data2$cancer_type,levels = rev(as.character(TLS_samples$cancer_type)[1:12]))
-b = ggplot(summary_data2,aes(x=cancer_type,y=total_counts))+geom_bar(stat='identity',fill="green4")+
+p2 = ggplot(summary_data2,aes(x=cancer_type,y=total_counts))+geom_bar(stat='identity',fill="green4")+
   theme_classic() + scale_y_continuous(breaks=c(1,5,10,15,20,25,30,35,40)) +
   coord_flip() + labs(fill = "") + ylab("") + xlab("")
 
-pdf("./result/Fig1C_2.pdf")
-print(b)
+pdf("./result/Fig1C_2.pdf",width=5,height=5)
+print(p2)
 dev.off()
 rm(list = ls())
 
@@ -78,7 +74,7 @@ tls_density$Cancer_type <- factor(tls_density$Cancer_type, levels = rev(cnc_type
 
 tls_density = tls_density[!tls_density$Cancer_type %in% c("OSCC","PAAD","OVCA"),]
 
-p_tls <- ggplot(tls_density, aes(x=Cancer_type, y=density, fill=Cancer_type)) +
+p1 <- ggplot(tls_density, aes(x=Cancer_type, y=density, fill=Cancer_type)) +
   geom_boxplot(outlier.shape = NA) +
   theme_classic() +
   scale_y_continuous(limits=c(0, 500000), breaks=seq(0, 500000, by=100000)) +
@@ -87,7 +83,7 @@ p_tls <- ggplot(tls_density, aes(x=Cancer_type, y=density, fill=Cancer_type)) +
   coord_flip()
 
 pdf("./result/Fig1D_1.pdf",width=4,height=5)
-p_tls
+p1
 dev.off()
 rm(list = ls())
 
@@ -103,14 +99,14 @@ cnc_type= c("LUAD","STAD","LIHC","BRCA",
 tls_sample_count$Cancer_type <- factor(tls_sample_count$Cancer_type, levels = rev(cnc_type[1:11]))
 tls_sample_count = tls_sample_count[!tls_sample_count$Cancer_type %in% c("OSCC","PAAD","OVCA"),]
 
-a <- ggplot(tls_sample_count, aes(x=Cancer_type, y=Freq,fill = Cancer_type)) +
+p2 <- ggplot(tls_sample_count, aes(x=Cancer_type, y=Freq,fill = Cancer_type)) +
   geom_boxplot() +
   theme_classic() +
   scale_fill_brewer(palette="Paired")+
   theme(legend.position = "none",axis.title.x = element_blank())  + coord_flip()
 
 pdf("./result/Fig1D_2.pdf",width=3,height=5)
-a
+p2
 dev.off()
 
 rm(list = ls())
@@ -123,7 +119,7 @@ tls_location_df = data.frame(tls_location_table)
 tls_location_df$percentage = 100* (tls_location_df$Freq / sum(tls_location_df$Freq))
 tls_location_df$percentage = round(tls_location_df$percentage,1)
 
-a <- ggplot(tls_location_df, aes(x = "", y = Freq, fill = Var1)) +
+p1 <- ggplot(tls_location_df, aes(x = "", y = Freq, fill = Var1)) +
   geom_bar(stat = "identity", width = 1) +
   geom_text(
     aes(label = paste0(percentage, "%")),
@@ -142,12 +138,16 @@ a <- ggplot(tls_location_df, aes(x = "", y = Freq, fill = Var1)) +
   )
 
 pdf("./result/Fig1E_1.pdf")
-print(a)
+print(p1)
 dev.off()
 
 rm(list = ls())
 
 tls_location <- readRDS("./data/TLS_location.rds")
+
+cnc_type= c("LUAD","STAD","LIHC","BRCA",
+            "CRC","CSCC","BLCA","KIRC",
+            "OSCC","PAAD","OVCA","GBM")
 
 tls_location <- tls_location[tls_location$Cancer_type != "OSCC", ]
 
@@ -243,19 +243,13 @@ plot_df <- plot_df %>%
   dplyr::mutate(ypos = cumsum(proportion) - 0.5 * proportion) %>%
   dplyr::ungroup()
 
-fill_cols <- c(
-  DT = "#3d5589",
-  PT = "#8491b4",
-  IT = "#c0d5ee"
-)
-
 plot_df <- plot_df %>%
   dplyr::filter(Cancer_type %in% desired_order) %>%
   dplyr::mutate(Cancer_type = factor(Cancer_type, levels = rev(desired_order)),
                 Location = factor(Location, levels = c("DT","IT","PT")))
 
 
-p <- ggplot(plot_df, aes(x = Cancer_type, y = proportion, fill = Location)) +
+p2 <- ggplot(plot_df, aes(x = Cancer_type, y = proportion, fill = Location)) +
   geom_bar(stat = "identity", position = "stack") +
   geom_text(
     aes(label = ifelse(sig == "", "", sig)),
@@ -269,6 +263,6 @@ p <- ggplot(plot_df, aes(x = Cancer_type, y = proportion, fill = Location)) +
   scale_fill_manual(values = c(DT="#3d5589", IT="#c0d5ee", PT="#8491b4"))
 
 pdf("./result/Fig1E_2.pdf", width = 5, height = 5)
-print(p)
+print(p2)
 dev.off()
 

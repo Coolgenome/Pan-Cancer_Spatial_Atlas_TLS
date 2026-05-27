@@ -9,10 +9,10 @@ library(circlize)
 #### Figure 3A ####
 gene_mat <- readRDS("./data/TLS_gene_expressions.rds")
 
-gene_mat2 = gene_mat
-rownames(gene_mat2) = c("E_TLS","P_TLS","S_TLS")
-gene_category_all = read.csv("./data/fig3_markers.csv")
-major_category = unique(gene_category_all$Major_type)
+tls_gene_expr_mat = gene_mat
+rownames(tls_gene_expr_mat) = c("E_TLS","P_TLS","S_TLS")
+marker_annotation_df = read.csv("./data/fig3_markers.csv")
+major_types = unique(marker_annotation_df$Major_type)
 
 B_category_orders <- c("B","Bn","Breg","Bm","GCB","PC")
 CAF_Macrophage_DC_category_orders <- c("TCR signaling","DC","Macrophage","Endothelial","CAF","Fibroblast","myCAF","Antigen presentation")
@@ -20,31 +20,29 @@ T_category_orders <- c("T","Tn","Tcm","Teff","Tfh","T cell exhaustion","Treg",'T
 Others_category_orders <- c("Cytokines and Chemokines","Proliferation")
 
 pdf_height = 4
-T_height = 80
-rest_height = 30
+pdf_width = 30
 
-for(j in 1:length(major_category)){
-  gene_category = gene_category_all[gene_category_all$Major_type == major_category[j],]
-  celltype_in_order =  get(paste0(major_category[j],"_category_orders"))
-  pdf_width = ifelse(major_category[j] != "T",rest_height,rest_height)
-  
+
+for(j in 1:length(major_types)){
+  major_type_markers_df = marker_annotation_df[marker_annotation_df$Major_type == major_types[j],]
+  celltype_order =  get(paste0(major_types[j],"_category_orders"))
   ht = list()
-  for(i in 1:length(celltype_in_order)){
-    gene_category_subset = gene_category[gene_category$celltype == celltype_in_order[i],]
+  for(i in 1:length(celltype_order)){
+    major_type_markers_df_subset = major_type_markers_df[major_type_markers_df$celltype == celltype_order[i],]
     
-    rownames(gene_category_subset) = gene_category_subset$gene
-    gene_category2 = gene_category_subset[gene_category_subset$gene %in% colnames(gene_mat2),]
+    rownames(major_type_markers_df_subset) = major_type_markers_df_subset$gene
+    major_type_markers_df2 = major_type_markers_df_subset[major_type_markers_df_subset$gene %in% colnames(tls_gene_expr_mat),]
     
-    rownames(gene_category2) = gene_category2$gene
-    gene_mat2_subset = gene_mat2[,gene_category2$gene]
+    rownames(major_type_markers_df2) = major_type_markers_df2$gene
+    tls_gene_expr_mat_subset = tls_gene_expr_mat[,major_type_markers_df2$gene]
     
-    row_anno_matrix2 <- as.matrix(gene_category2[colnames(gene_mat2_subset), "celltype"])
+    column_split_mat <- as.matrix(major_type_markers_df2[colnames(tls_gene_expr_mat_subset), "celltype"])
     
-    unique_categories2 <- unique(gene_category2$celltype)
-    row_anno_df2 <- as.data.frame(row_anno_matrix2)
-    row_anno_df2$V1 <- factor(row_anno_df2$V1, levels = unique_categories2)
-    if (nrow(gene_category_subset) != 1) {
-      ht[[i]] <- Heatmap(gene_mat2_subset,
+    celltype_levels <- unique(major_type_markers_df2$celltype)
+    column_split_df <- as.data.frame(column_split_mat)
+    column_split_df$V1 <- factor(column_split_df$V1, levels = celltype_levels)
+    if (nrow(major_type_markers_df_subset) != 1) {
+      ht[[i]] <- Heatmap(tls_gene_expr_mat_subset,
                          cluster_columns = T,
                          cluster_rows =  F,
                          show_column_dend = F,
@@ -52,12 +50,12 @@ for(j in 1:length(major_category)){
                          name = "Gene Expression",
                          column_names_gp = gpar(fontsize = 27, rot = 45),
                          row_names_gp = gpar(fontsize = 27),
-                         column_split = row_anno_df2,
+                         column_split = column_split_df,
                          column_gap = unit(1.5, "mm"),
                          col = colorRampPalette(c('blue', 'yellow'))(13),
                          column_names_rot = 45)
     } else {
-      ht[[i]] <- Heatmap(gene_mat2_subset,
+      ht[[i]] <- Heatmap(tls_gene_expr_mat_subset,
                          cluster_columns = T,
                          cluster_rows = F,
                          show_column_dend = F,
@@ -70,22 +68,22 @@ for(j in 1:length(major_category)){
                          column_names_rot = 45)
     }
   }
-  if (major_category[j] == "T") {
+  if (major_types[j] == "T") {
     combined_heatmap <- ht[[1]] + ht[[2]] + ht[[3]] + ht[[4]]
-    pdf(paste0("./result/Fig3A_", major_category[j], "_1.pdf"),
+    pdf(paste0("./result/Fig3A_", major_types[j], "_1.pdf"),
         width = pdf_width, height = pdf_height)
     draw(combined_heatmap)
     dev.off()
     
     combined_heatmap <- ht[[5]] + ht[[6]] + ht[[7]] + ht[[8]] + ht[[9]]
-    pdf(paste0("./result/Fig3A_", major_category[j], "_2.pdf"),
+    pdf(paste0("./result/Fig3A_", major_types[j], "_2.pdf"),
         width = pdf_width, height = pdf_height)
     draw(combined_heatmap)
     dev.off()
-  } else if (major_category[j] %in% c("B","Others")) {
+  } else if (major_types[j] %in% c("B","Others")) {
     combined_heatmap <- Reduce(`+`, ht)
     
-    pdf(paste0("./result/Fig3A_", major_category[j], ".pdf"),
+    pdf(paste0("./result/Fig3A_", major_types[j], ".pdf"),
         width = pdf_width, height = pdf_height)
     draw(combined_heatmap)
     dev.off()

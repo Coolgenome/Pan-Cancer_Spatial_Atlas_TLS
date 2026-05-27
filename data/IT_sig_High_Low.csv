@@ -1,0 +1,9 @@
+X,overlap_cancer_type_cnt,overlap_cancer_types
+HALLMARK_COMPLEMENT,6,"Bladder, Breast, ccRCC, Gastric, Liver, Lung"
+HALLMARK_IL2_STAT5_SIGNALING,6,"Bladder, Breast, ccRCC, Gastric, Liver, Lung"
+HALLMARK_INFLAMMATORY_RESPONSE,6,"Bladder, Breast, ccRCC, Gastric, Liver, Lung"
+HALLMARK_INTERFERON_GAMMA_RESPONSE,6,"Breast, ccRCC, Colorectal, Gastric, Liver, Lung"
+MP18.Interferon.MHC.II..II.,6,"Bladder, Breast, ccRCC, Gastric, Liver, Lung"
+HALLMARK_APOPTOSIS,5,"Bladder, Breast, Gastric, Liver, Lung"
+HALLMARK_IL6_JAK_STAT3_SIGNALING,5,"Breast, ccRCC, Gastric, Liver, Lung"
+HALLMARK_INTERFERON_ALPHA_RESPONSE,5,"Breast, ccRCC, Colorectal, Liver, Lung"

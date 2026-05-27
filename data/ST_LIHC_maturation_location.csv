@@ -1,0 +1,86 @@
+ST_ID,sample_key,Sample.Name,Sample.Description,TLS_ID,Cluster,Location
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_10,Primary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_13,Immature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_16,Immature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_18,Immature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_27,Immature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_34,Immature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_36,Secondary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_37,Secondary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_38,Secondary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_41,Secondary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_42,Secondary Mature,Normal
+Li1,cHC-1,cHC-1L,Leading-edge,Li1_43,Secondary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_19,Primary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_22,Secondary Mature,Tumor_region
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_31,Primary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_32,Primary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_33,Primary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_46,Primary Mature,Normal
+Li4,HCC-1,HCC-1L,Leading-edge,Li4_47,Primary Mature,Normal
+Li5,HCC-1,HCC-1N,Normal,Li5_1,Primary Mature,Normal
+Li5,HCC-1,HCC-1N,Normal,Li5_2,Primary Mature,Normal
+Li5,HCC-1,HCC-1N,Normal,Li5_5,Primary Mature,Normal
+Li5,HCC-1,HCC-1N,Normal,Li5_10,Secondary Mature,Normal
+Li6,HCC-1,HCC-1T,Tumor,Li6_7,Secondary Mature,Tumor_region
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_9,Immature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_18,Immature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_28,Immature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_56,Secondary Mature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_57,Primary Mature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_58,Immature,Normal
+Li7,HCC-2,HCC-2L,Leading-edge,Li7_59,Primary Mature,Normal
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_12,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_21,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_26,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_27,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_28,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_29,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_30,Secondary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_34,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_35,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_40,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_41,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_44,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_46,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_47,Primary Mature,Tumor_region
+Li11,HCC-3,HCC-3L,Leading-edge,Li11_50,Primary Mature,Tumor_region
+Li12,HCC-3,HCC-3N,Normal,Li12_2,Primary Mature,Normal
+Li12,HCC-3,HCC-3N,Normal,Li12_20,Primary Mature,Normal
+Li12,HCC-3,HCC-3N,Normal,Li12_24,Primary Mature,Normal
+Li12,HCC-3,HCC-3N,Normal,Li12_28,Primary Mature,Normal
+Li12,HCC-3,HCC-3N,Normal,Li12_30,Primary Mature,Normal
+Li12,HCC-3,HCC-3N,Normal,Li12_31,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_9,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_14,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_24,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_33,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_38,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_71,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_82,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_112,Secondary Mature,Tumor_Boundary
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_114,Primary Mature,Normal
+Li14,HCC-4,HCC-4L,Leading-edge,Li14_115,Primary Mature,Normal
+Li15,HCC-4,HCC-4N,Normal,Li15_1,Primary Mature,Normal
+Li15,HCC-4,HCC-4N,Normal,Li15_17,Primary Mature,Normal
+Li15,HCC-4,HCC-4N,Normal,Li15_18,Immature,Normal
+Li15,HCC-4,HCC-4N,Normal,Li15_19,Immature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_4,Primary Mature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_7,Primary Mature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_9,Primary Mature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_11,Primary Mature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_12,Primary Mature,Normal
+Li17,HCC-5,HCC-5A,Tumor,Li17_13,Primary Mature,Normal
+Li18,HCC-5,HCC-5B,Tumor,Li18_26,Immature,NA
+Li18,HCC-5,HCC-5B,Tumor,Li18_35,Secondary Mature,NA
+Li19,HCC-5,HCC-5C,Tumor,Li19_1,Immature,Normal
+Li19,HCC-5,HCC-5C,Tumor,Li19_10,Immature,Normal
+Li19,HCC-5,HCC-5C,Tumor,Li19_11,Immature,Tumor_Boundary
+Li19,HCC-5,HCC-5C,Tumor,Li19_12,Immature,Tumor_Boundary
+Li19,HCC-5,HCC-5C,Tumor,Li19_15,Primary Mature,Normal
+Li19,HCC-5,HCC-5C,Tumor,Li19_16,Immature,Normal
+Li21,ICC-1,ICC-1L,Leading-edge,Li21_1,Primary Mature,Normal
+Li21,ICC-1,ICC-1L,Leading-edge,Li21_3,Primary Mature,Out_of_tissue
+Li21,ICC-1,ICC-1L,Leading-edge,Li21_20,Primary Mature,Normal
+Li21,ICC-1,ICC-1L,Leading-edge,Li21_24,Primary Mature,Out_of_tissue
+Li21,ICC-1,ICC-1L,Leading-edge,Li21_25,Primary Mature,Normal
